@@ -1,0 +1,11 @@
+.*
+.idea/
+.venv/
+.vscode/
+build
+*.pyc
+.DS_Store
+dataset/
+openrec.egg-info/
+results/
+*.bak

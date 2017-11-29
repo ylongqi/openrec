@@ -1,5 +1,0 @@
-tensorflow==1.0.0
-tqdm==4.11.2
-lightfm
-termcolor
-six

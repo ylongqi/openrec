@@ -1,22 +1,21 @@
-from distutils.core import setup
+from setuptools import find_packages, setup
+
 
 setup(
-    name='OpenRec',
-    version='0.1dev',
-    packages=['openrec'],
-    license='BSD',
-    long_description=open('README.md').read(),
-    scripts=[],
+    name='openrec',
+    version='0.1.0-beta',
+    packages=find_packages(),
+    license='Apache 2.0',
+    author='Longqi Yang',
+    author_email='ylongqi@cs.cornell.edu',
     install_requires=[
-        'tensorflow'
-      ],
-    classifiers=[
-    'Development Status :: 3 - Alpha',
-    'Intended Audience :: Developers',
-    'Topic :: Software Development :: Build Tools',
-    'License :: OSI Approved :: BSD License',
-    'Programming Language :: Python :: 2.7',
-    'Operating System :: MacOS :: MacOS X',
-    'Operating System :: POSIX :: Linux',
-],
+        'tensorflow>=1.3.0',
+        'tqdm>=4.15.0',
+        'numpy>=1.13.0',
+        'termcolor>=1.1.0',
+        'scipy>=0.19.1'
+          ],
+    classifiers=['Development Status :: 3 - Alpha',
+                 'License :: OSI Approved :: Apache 2.0',
+                 'Topic :: Scientific/Engineering :: Artificial Intelligence'],
 )

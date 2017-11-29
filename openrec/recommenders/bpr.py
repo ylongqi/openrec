@@ -63,7 +63,7 @@ class BPR(Recommender):
                                     shape=[self._max_item, self._dim_embed], scope='item', reuse=True)
             self._n_item_bias = LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._n_item_id_input,
                                     shape=[self._max_item, 1], scope='item_bias', reuse=True)
-            self._loss_nodes += [self._p_item_vec, self._p_item_bias, self._n_item_vec, self._n_item_vec]
+            self._loss_nodes += [self._p_item_vec, self._p_item_bias, self._n_item_vec, self._n_item_bias]
         else:
             
             self._item_vec_serving = LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._item_id_serving,

@@ -11,3 +11,4 @@ results/
 *.bak
 # Setuptools distribution folder.
 /dist/
+*build*

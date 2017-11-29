@@ -12,7 +12,20 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   Modules <modules/modules>
+
+      Modules <modules/openrec.modules>
+      Recommenders  <recommenders/recommenders>
+      Utils  <utils/utils>
+      Model Trainer <openrec.model_trainer>
+
+Module contents
+---------------
+
+.. automodule:: openrec
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 
 

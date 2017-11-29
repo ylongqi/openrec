@@ -13,7 +13,7 @@ setup(
         'tqdm>=4.15.0',
         'numpy>=1.13.0',
         'termcolor>=1.1.0',
-        'scipy>=0.19.1'
+        'scipy==0.19.1'
           ],
     classifiers=['Development Status :: 3 - Alpha',
                  'License :: OSI Approved :: Apache 2.0',

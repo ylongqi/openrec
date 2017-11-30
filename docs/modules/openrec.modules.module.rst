@@ -1,7 +1,12 @@
-modules\.module module
-===============================
+Module
+=================================
 
-.. automodule:: openrec.modules.module
+
+.. automodule:: openrec.modules
+.. currentmodule:: openrec.modules
+
+.. autoclass:: Module
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+

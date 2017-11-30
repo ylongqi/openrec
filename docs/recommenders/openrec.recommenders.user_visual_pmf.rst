@@ -1,7 +1,11 @@
-openrec\.recommenders\.user\_visual\_pmf module
-===============================================
+User Visual PMF
+=================================
 
-.. automodule:: openrec.recommenders.user_visual_pmf
+
+.. automodule:: openrec.recommenders
+.. currentmodule:: openrec.recommenders
+
+.. autoclass:: UserVisualPMF
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:

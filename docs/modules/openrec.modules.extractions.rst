@@ -1,20 +1,56 @@
-modules\.extractions package
+Extractions 
 =====================================
 
-
-.. toctree::
-
-   openrec.modules.extractions.extraction
-   openrec.modules.extractions.identity_mapping
-   openrec.modules.extractions.latent_factor
-   openrec.modules.extractions.look_up
-   openrec.modules.extractions.multi_layer_fc
-   openrec.modules.extractions.sdae
-
-Module contents
----------------
-
 .. automodule:: openrec.modules.extractions
+.. currentmodule:: openrec.modules.extractions
+
+
+
+Extraction
+-----------
+
+.. autoclass:: Extraction
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+
+
+Look Up
+-------
+
+.. autoclass:: LookUp
+    :members:
+    :undoc-members:
+    :private-members:
+
+Identity Mapping
+-----------------
+
+.. autoclass:: IdentityMapping
+    :members:
+    :undoc-members:
+    :private-members:
+
+Latent Factor
+--------------
+
+.. autoclass:: LatentFactor
+    :members:
+    :undoc-members:
+    :private-members:
+
+Multi Layer FC
+--------------
+
+.. autoclass:: MultiLayerFC
+    :members:
+    :undoc-members:
+    :private-members:
+
+SDAE
+-------
+
+.. autoclass:: SDAE
+    :members:
+    :undoc-members:
+    :private-members:

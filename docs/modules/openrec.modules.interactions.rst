@@ -1,23 +1,70 @@
-openrec\.modules\.interactions package
-======================================
-
-Submodules
-----------
-
-.. toctree::
-
-   openrec.modules.interactions.interaction
-   openrec.modules.interactions.pairwise_eu_dist
-   openrec.modules.interactions.pairwise_log
-   openrec.modules.interactions.pointwise_ge_ce
-   openrec.modules.interactions.pointwise_ge_mlp_ce
-   openrec.modules.interactions.pointwise_mlp_ce
-   openrec.modules.interactions.pointwise_mse
-
-Module contents
----------------
+Interactions 
+=====================================
 
 .. automodule:: openrec.modules.interactions
+.. currentmodule:: openrec.modules.interactions
+
+
+
+Interaction
+------------
+
+.. autoclass:: Interaction
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+
+
+PairwiseLog
+---------------
+
+.. autoclass:: PairwiseLog
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+PairwiseEuDist
+----------------
+
+.. autoclass:: PairwiseEuDist
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+PointwiseGeCE
+---------------
+
+.. autoclass:: PointwiseGeCE
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+PointwiseGeMLPCE
+------------------
+
+.. autoclass:: PointwiseGeMLPCE
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+PointwiseMLPCE
+----------------
+
+.. autoclass:: PointwiseMLPCE
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+PointwiseMSE
+------------
+
+.. autoclass:: PointwiseMSE
+    :members:
+    :undoc-members:
+    :private-members:
+

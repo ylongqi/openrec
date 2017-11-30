@@ -18,16 +18,6 @@ Contents
       Utils  <utils/utils>
       Model Trainer <openrec.model_trainer>
 
-Module contents
----------------
-
-.. automodule:: openrec
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-
 
 
 Indices and tables

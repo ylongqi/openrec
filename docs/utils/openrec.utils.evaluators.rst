@@ -1,20 +1,43 @@
-openrec\.utils\.evaluators package
+Evaluators package
 ==================================
 
-Submodules
-----------
-
-.. toctree::
-
-   openrec.utils.evaluators.auc
-   openrec.utils.evaluators.eval_manager
-   openrec.utils.evaluators.evaluator
-   openrec.utils.evaluators.recall
-
-Module contents
----------------
-
 .. automodule:: openrec.utils.evaluators
+.. currentmodule:: openrec.utils.evaluators
+
+Evaluator
+---------
+
+
+
+
+.. autoclass:: Evaluator
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+
+
+Eval Manager
+------------
+
+.. autoclass:: EvalManager
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+AUC
+----
+
+.. autoclass:: AUC
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+Recall
+-------
+
+.. autoclass:: Recall
+    :members:
+    :undoc-members:
+    :private-members:

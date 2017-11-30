@@ -4,8 +4,9 @@ modules package
 
 .. toctree::
     :maxdepth: 5
+
+    Module <openrec.modules.module>
+    Extractions <openrec.modules.extractions>
+    Fusions <openrec.modules.fusions>
+    Interactions <openrec.modules.interactions>
     
-    openrec.modules.extractions
-    openrec.modules.fusions
-    openrec.modules.interactions
-    openrec.modules.module

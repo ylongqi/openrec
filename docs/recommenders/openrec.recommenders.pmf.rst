@@ -8,5 +8,4 @@ PMF
 .. autoclass:: PMF
     :members:
     :undoc-members:
-    :show-inheritance:
     :private-members:

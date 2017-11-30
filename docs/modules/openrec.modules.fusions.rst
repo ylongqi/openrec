@@ -1,19 +1,34 @@
-openrec\.modules\.fusions package
-=================================
-
-Submodules
-----------
-
-.. toctree::
-
-   openrec.modules.fusions.average
-   openrec.modules.fusions.concat
-   openrec.modules.fusions.fusion
-
-Module contents
----------------
+Fusions 
+=====================================
 
 .. automodule:: openrec.modules.fusions
+.. currentmodule:: openrec.modules.fusions
+
+
+
+Fusion
+-----------
+
+.. autoclass:: Fusion
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+
+
+Concat
+-----------
+
+.. autoclass:: Concat
+    :members:
+    :undoc-members:
+    :private-members:
+
+
+Average
+-----------
+
+.. autoclass:: Average
+    :members:
+    :undoc-members:
+    :private-members:
+

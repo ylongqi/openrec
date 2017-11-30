@@ -1,25 +1,10 @@
 utils package
 ======================
 
-Subpackages
------------
 
 .. toctree::
+   :maxdepth: 2
 
-    openrec.utils.evaluators
-    openrec.utils.samplers
-
-Submodules
-----------
-
-.. toctree::
-
-   openrec.utils.dataset
-
-Module contents
----------------
-
-.. automodule:: openrec.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    Evaluators <openrec.utils.evaluators>
+    Samplpers <openrec.utils.samplers>
+    Dataset <openrec.utils.dataset>

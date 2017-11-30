@@ -1,18 +1,26 @@
-openrec\.utils\.samplers package
+Samplers
 ================================
 
-Submodules
-----------
-
-.. toctree::
-
-   openrec.utils.samplers.pairwise_sampler
-   openrec.utils.samplers.pointwise_sampler
-
-Module contents
----------------
-
 .. automodule:: openrec.utils.samplers
+.. currentmodule:: openrec.utils.samplers
+
+
+Pairwise Sampler
+----------------
+
+
+
+
+.. autoclass:: PairwiseSampler
     :members:
     :undoc-members:
-    :show-inheritance:
+    :private-members:
+
+Pointwise Sampler
+-----------------
+
+
+.. autoclass:: PointwiseSampler
+    :members:
+    :undoc-members:
+    :private-members:

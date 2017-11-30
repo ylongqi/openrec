@@ -9,3 +9,4 @@ from visual_bpr import VisualBPR
 from visual_cml import VisualCML
 from visual_gmf import VisualGMF
 from user_pmf import UserPMF
+from user_visual_pmf import UserVisualPMF

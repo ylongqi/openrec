@@ -3,11 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to openrec's documentation!
+OpenRec documentation
 ===================================
 
 Contents
 ========
+
+OpenRec is an open-source and modular library for neural network-inspired recommendation algorithms
 
 .. toctree::
    :maxdepth: 2

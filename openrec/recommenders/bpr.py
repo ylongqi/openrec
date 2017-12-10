@@ -4,8 +4,49 @@ from openrec.modules.interactions import PairwiseLog
 
 class BPR(Recommender):
 
+    """
+    Pure Baysian Personalized Ranking (BPR) [1]_ based Recommender
+
+    Parameters
+    ----------
+    batch_size: int
+        Training batch size. Each training instance consists of 
+        an user, a positive item, and a negative item.
+    max_user: int
+        Maximum number of users in the recommendation system.
+    max_item: int
+        Maximum number of items in the recommendation system.
+    dim_embed: int
+        Dimensionality of the user/item embedding.
+    test_batch_size: int, optional
+        Batch size for testing and serving. Each testing/serving bacth consists of
+        (an user, )
+    l2_reg: float, optional
+        Weight for L2 regularization, i.e., weight decay.
+    opt: 'SGD'(default) or 'Adam', optional
+        Optimization algorithm, SGD: Stochastic Gradient Descent.
+    lr: float, optional
+        Initial learning rate.
+    init_dict: dict, optional
+        Key-value pairs for inital parameter values.
+    sess_config: tensorflow.ConfigProto(), optional
+        Tensorflow session configuration.
+
+    Notes  
+    -----
+    BPR recommender is trained on users' implicit feedback signals (e.g., clicks and views). The items 
+    clicked or viewed are treated as positive items, and otherwise as negative items. The pure BPR
+    recommender does not consider any other auxiliary signals.
+
+    References
+    ----------
+    .. [1] Rendle, S., Freudenthaler, C., Gantner, Z. and Schmidt-Thieme, L., 2009, June. 
+        BPR: Bayesian personalized ranking from implicit feedback. In Proceedings of the 
+        twenty-fifth conference on uncertainty in artificial intelligence (pp. 452-461). AUAI Press.
+    """
+
     def __init__(self, batch_size, max_user, max_item, dim_embed, 
-        test_batch_size=None, l2_reg=None, opt='SGD', init_dict=None, sess_config=None):
+        test_batch_size=None, l2_reg=None, opt='SGD', lr=None, init_dict=None, sess_config=None):
 
         self._dim_embed = dim_embed
 
@@ -15,6 +56,7 @@ class BPR(Recommender):
                                   max_item=max_item, 
                                   l2_reg=l2_reg,
                                   opt=opt,
+                                  lr=lr,
                                   init_dict=init_dict,
                                   sess_config=sess_config)
 

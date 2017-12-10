@@ -36,6 +36,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
     'sphinx.ext.githubpages']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -166,7 +167,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'openrec', u'openrec Documentation',
-     author, 'openrec', 'One line description of project.',
+     author, 'openrec', 'OpenRec is an open-source and modular library for neural network-inspired recommendation algorithms.',
      'Miscellaneous'),
 ]
 

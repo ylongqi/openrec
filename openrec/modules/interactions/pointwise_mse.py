@@ -5,8 +5,47 @@ from openrec.modules.interactions import Interaction
 
 class PointwiseMSE(Interaction):
 
-    def __init__(self, user, item, item_bias, labels=None, train=None, a=1.0, b=1.0, 
-                scale=None, offset=None, scope=None, reuse=False):
+    """
+    The PointwiseMSE module minimizes the pointwise mean-squre-error [ctm]_ as follows (regularization terms \
+    are not included):
+    
+    .. math::
+        \min \sum_{ij}c_{ij}(r_{ij} - u_i^T v_j)^2
+
+    where :math:`u_i` and :math:`v_j` are representations for user :math:`i` and item :math:`j` respectively; \
+    :math:`c_{ij}=a` if :math:`r_{ij}=1`, otherwise :math:`c_{ij}=b`.
+
+    Parameters
+    ----------
+    user: Tensorflow tensor
+        Representations for users involved in the interactions. Shape: **[number of interactions, dimensionality of \
+        user representations]**.
+    item: Tensorflow tensor
+        Representations for items involved in the interactions. Shape: **[number of interactions, dimensionality of \
+        item representations]**.
+    item_bias: Tensorflow tensor
+        Biases for items involved in the interactions. Shape: **[number of interactions, 1]**.
+    labels: Tensorflow tensor, required for training
+        Groundtruth labels for the interactions. Shape **[number of interactions, ]**.
+    a: float, optional
+        The value of :math:`c_{ij}` if :math:`r_{ij}=1`.
+    b: float, optional
+        The value of :math:`c_{ij}` if :math:`r_{ij}=0`.
+    train: bool, optionl
+        An indicator for training or servining phase.
+    scope: str, optional
+        Scope for module variables.
+    reuse: bool, optional
+        Whether or not to reuse module variables.
+    
+    References
+    ----------
+    .. [ctm] Wang, C. and Blei, D.M., 2011, August. Collaborative topic modeling for recommending scientific articles. \
+        In Proceedings of the 17th ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 448-456). ACM.
+    """
+
+    def __init__(self, user, item, item_bias, labels=None, a=1.0, b=1.0, 
+                train=True, scope=None, reuse=False):
 
         assert train is not None, 'train cannot be None'
         assert user is not None, 'user cannot be None'
@@ -16,8 +55,6 @@ class PointwiseMSE(Interaction):
         self._user = user
         self._item = item
         self._item_bias = item_bias
-        self._scale = scale
-        self._offset = offset
 
         if train:
             assert labels is not None, 'labels cannot be None'

@@ -6,9 +6,28 @@ from openrec.modules.extractions import Extraction
 
 class LatentFactor(Extraction):
 
-    def __init__(self, shape, init, ids=None, l2_reg=None, scope=None, reuse=False):
+    """
+    The LatentFactor module maps (embeds) input ids into latent representations. The module \
+    outputs a tensor with shape **shape(ids) + [embedding dimensionality]**.
 
-        assert init is not None, 'init cannot be None'
+    Parameters
+    ----------
+    shape: list
+        Shape of the embedding matrix, i.e. [number of unique ids, embedding dimensionality].
+    init: str, optional
+        Embedding initialization. *'zero'* or *'normal'* (default).
+    ids: Tensorflow tensor, optionl
+        List of ids to retrieve embeddings. If *None*, the whole embedding matrix is returned.
+    l2_reg: float, optional
+        Weight for L2 regularization, i.e., weight decay.
+    scope: str, optional
+        Scope for module variables.
+    reuse: bool, optional
+        Whether or not to reuse module variables.
+    """
+
+    def __init__(self, shape, init='normal', ids=None, l2_reg=None, scope=None, reuse=False):
+
         assert shape is not None, 'shape cannot be None'
 
         if init == 'normal':
@@ -37,6 +56,21 @@ class LatentFactor(Extraction):
                 self._outputs.append(embedding)
 
     def censor_l2_norm_op(self, censor_id_list=None, max_norm=1):
+
+        """Limit the norm of embeddings.
+        
+        Parameters
+        ----------
+        censor_id_list: list or Tensorflow tensor
+            list of embeddings to censor (indexed by ids).
+        max_norm: float, optional
+            Maximum norm.
+
+        Returns
+        -------
+        Tensorflow operator
+            An operator for post-training execution.
+        """
 
         with tf.variable_scope(self._scope, reuse=True):
             embedding = tf.get_variable('embedding', shape=self._shape, trainable=True,

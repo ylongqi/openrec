@@ -49,13 +49,11 @@ class VisualBPR(BPR):
 
         super(VisualBPR, self)._build_item_extractions(train)
         if train:
-            self._loss_nodes.remove(self._p_item_vec)
-            self._loss_nodes.remove(self._n_item_vec)
-            
             self._p_item_vf = MultiLayerFC(in_tensor=self._p_item_vfeature_input, dropout_mid=self._dropout_rate, 
                                         dims=self._dims, scope='item_visual_embed', reuse=False)
             self._n_item_vf =  MultiLayerFC(in_tensor=self._n_item_vfeature_input, dropout_mid=self._dropout_rate, 
                                         dims=self._dims, scope='item_visual_embed', reuse=True)
+            self._loss_nodes += [self._p_item_vf, self._n_item_vf]
         else:
             self._item_vf_serving = MultiLayerFC(in_tensor=self._item_vfeature_serving, 
                                                 dims=self._dims, scope='item_visual_embed', reuse=True)
@@ -67,7 +65,6 @@ class VisualBPR(BPR):
                                     module_list=[self._p_item_vec, self._p_item_vf], weight=2.0)
             self._n_item_vec = Average(scope='item_concat', reuse=True,
                                     module_list=[self._n_item_vec, self._n_item_vf], weight=2.0)
-            self._loss_nodes += [self._p_item_vec, self._p_item_bias, self._n_item_vec, self._n_item_bias]
         else:
             self._item_vec_serving = Average(scope='item_concat', reuse=True, 
                                 module_list=[self._item_vec_serving, self._item_vf_serving], weight=2.0)

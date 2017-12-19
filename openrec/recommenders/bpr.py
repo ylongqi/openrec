@@ -20,7 +20,7 @@ class BPR(Recommender):
         Dimensionality of the user/item embedding.
     test_batch_size: int, optional
         Batch size for testing and serving. Each testing/serving bacth consists of
-        (an user, )
+        an user.
     l2_reg: float, optional
         Weight for L2 regularization, i.e., weight decay.
     opt: 'SGD'(default) or 'Adam', optional

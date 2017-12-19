@@ -5,6 +5,23 @@ from openrec.modules.extractions import Extraction
 
 class LookUp(Extraction):
 
+    """
+    The LookUp module maps (embeds) input ids into *fixed* representations. The representations are \
+    not be updated during training. The module outputs a tensor with shape \
+    **shape(ids) + [embedding dimensionality]**.
+
+    Parameters
+    ----------
+    embed: numpy array
+        Fixed embedding matrix.
+    ids: Tensorflow tensor, optional
+        List of ids to retrieve embeddings. If *None*, the whole embedding matrix is returned.
+    scope: str, optional
+        Scope for module variables.
+    reuse: bool, optional
+        Whether or not to reuse module variables.
+    """
+
     def __init__(self, embed, ids=None, scope=None, reuse=False):
 
         assert embed is not None, 'embed cannot be None'

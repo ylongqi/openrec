@@ -4,19 +4,18 @@ from openrec.modules.fusions import Average
 
 class CDL(PMF):
 
-    def __init__(self, batch_size, max_user, max_item, dim_embed, item_f, dims, dropout_rate=None, test_batch_size=None,
-                    item_serving_size=None, l2_reg_u=None, l2_reg_mlp=None, l2_reg_v=None, l2_reg_n=None, opt='SGD',
+    def __init__(self, batch_size, max_user, max_item, dim_embed, item_f, dims, dropout=None, test_batch_size=None,
+                    item_serving_size=None, l2_reg_lf=None, l2_reg_mlp=None, l2_reconst=None, opt='SGD',
                     sess_config=None):
 
 
         self._item_f = item_f
         self._dims = dims
-        self._dropout_rate = dropout_rate
+        self._dropout = dropout
 
-        self._l2_reg_u = l2_reg_u
+        self._l2_reg_lf = l2_reg_lf
         self._l2_reg_mlp = l2_reg_mlp
-        self._l2_reg_v = l2_reg_v
-        self._l2_reg_n = l2_reg_n
+        self._l2_reconst = l2_reconst
 
         super(CDL, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, dim_embed=dim_embed,
                                 test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
@@ -48,11 +47,11 @@ class CDL(PMF):
 
         if train:
             self._loss_nodes.remove(self._item_lf)
-            sdae = SDAE(in_tensor=self._item_feature_input, dims=self._dims, l2_reg_mlp=self._l2_reg_mlp,
-                        l2_reg_n=self._l2_reg_n, dropout_rate=self._dropout_rate, scope='AutoEncoder', reuse=False)
+            sdae = SDAE(in_tensor=self._item_feature_input, dims=self._dims, l2_reg=self._l2_reg_mlp,
+                        l2_reconst=self._l2_reconst, dropout=self._dropout, scope='AutoEncoder', reuse=False)
             self._item_lf = Average(scope='item_average', reuse=False, module_list=[self._item_lf, sdae], weight=2.0)
             self._loss_nodes += [self._item_lf]
         else:
-            sdae = SDAE(in_tensor=self._item_feature_serving, dims=self._dims, l2_reg_mlp=self._l2_reg_mlp,
-                        l2_reg_n=self._l2_reg_n, dropout_rate=self._dropout_rate, scope='AutoEncoder', reuse=True)
+            sdae = SDAE(in_tensor=self._item_feature_serving, dims=self._dims, l2_reg=self._l2_reg_mlp,
+                        l2_reconst=self._l2_reconst, dropout=self._dropout, scope='AutoEncoder', reuse=True)
             self._item_lf_serving = Average(scope='item_average', reuse=True, module_list=[self._item_lf_serving, sdae], weight=2.0)

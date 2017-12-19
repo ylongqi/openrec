@@ -46,9 +46,9 @@ class VisualPMF(PMF):
         super(VisualPMF, self)._build_item_extractions(train)
 
         if train:
-            self._loss_nodes.remove(self._item_vec)
             self._item_vf = MultiLayerFC(in_tensor=self._item_vfeature_input, dims=self._dims, l2_reg=self._l2_reg_mlp,
                             dropout_mid=self._dropout_rate, scope='item_MLP', reuse=False)
+            self._loss_nodes += [self._item_vf]
         else:
             self._item_vf_serving = MultiLayerFC(in_tensor=self._item_vfeature_serving, dims=self._dims, l2_reg=self._l2_reg_mlp,
                             dropout_mid=self._dropout_rate, scope='item_MLP', reuse=True)
@@ -57,7 +57,6 @@ class VisualPMF(PMF):
 
         if train:
             self._item_vec = Average(scope='item_average', reuse=False, module_list=[self._item_vec, self._item_vf], weight=2.0)
-            self._loss_nodes += [self._item_vec]
         else:
             self._item_vec_serving = Average(scope='item_average', reuse=True, 
                                 module_list=[self._item_vec_serving, self._item_vf_serving], weight=2.0)

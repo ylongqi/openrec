@@ -3,11 +3,11 @@
 </div>
 
 
-[**OpenRec**](http://www.openren.ai/) is an open-source and modular library for neural network-inspired recommendation algorithms. Each recommender is modeled as a computational graph that consists of a structured ensemble of reusable modules connected through a set of well-defined interfaces. OpenRec is built to ease the process of extending and adapting state-of-the-art neural recommenders to heterogeneous recommendation scenarios, where different users', items', and contextual data sources need to be incorporated.
+[**OpenRec**](http://www.openren.ai/) is an open-source and modular library for neural network-inspired recommendation algorithms. Each recommender is modeled as a computational graph that consists of a structured ensemble of reusable modules connected through a set of well-defined interfaces. OpenRec is built to ease the process of extending and adapting state-of-the-art neural recommenders to heterogeneous recommendation scenarios, where different users', items', and contextual data sources need to be incorporated.
 
 **For the structure and the design philosophy of OpenRec, please refer to the following paper published in WSDM'18:** 
 
-[Longqi Yang](http://www.cs.cornell.edu/~ylongqi/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms. In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA. ![alt text](https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true "Creative Commons 4.0")
+[Longqi Yang](http://www.cs.cornell.edu/~ylongqi/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](http://www.cs.cornell.edu/~ylongqi/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
 
 ## Installation
 

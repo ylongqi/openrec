@@ -15,7 +15,7 @@
 
 ## Get started
 
-* [OpenRec website](http://www.openren.ai/)
+* [OpenRec website](http://www.openrec.ai/)
 * [OpenRec documents](http://openrec.readthedocs.io/en/latest/)
 * OpenRec tutorials (coming soon)
 

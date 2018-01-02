@@ -6,20 +6,58 @@ from openrec.utils.evaluators import EvalManager
 
 class ModelTrainer(object):
 
-    def __init__(self, batch_size, test_batch_size, item_serving_size=None, train_dataset=None, model=None, sampler=None):
+    """
+    The ModelTrainer class implements logics for basic recommender training and evaluation. 
+
+    Parameters
+    ----------
+    batch_size: int
+        Training batch size.
+    test_batch_size: int
+        Test/Evaluation batch size (number of users per testing batch).
+    train_dataset: Dataset
+        Dataset for model training.
+    model: Recommender
+        The target recommender.
+    sampler: Sampler
+        The sampler for model training.
+    item_serving_size: int, optional
+        Test/Evaluation batch size (number of items per testing batch).
+
+    Notes  
+    -----
+    
+    The function :code:`train` should be called for model training and evaluation.
+    """
+
+    def __init__(self, batch_size, test_batch_size, train_dataset, model, sampler, item_serving_size=None):
 
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
         self._item_serving_size = item_serving_size
 
         self._train_dataset = train_dataset
-        self._max_item = self._train_dataset.max_item
+        self._max_item = self._train_dataset.max_item()
 
         self._model = model
         self._sampler = sampler
 
     def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None):
+        """Train and evaluate a recommender.
 
+        Parameters
+        ----------
+        num_itr: int
+            total number of training iterations.
+        display_itr: int
+            Evaluation/testing period.
+        eval_datasets: list of Dataset
+            A list of datasets for evaluation/testing.
+        evaluators: list of Evaluator
+            A list of evaluators for evaluation/testing.
+        num_negatives: int, optional
+            If specified, a given number of items NOT interacted with each user will be sampled (as negative items) for evaluations.
+        """
         acc_loss = 0
         self._eval_manager = EvalManager(evaluators=evaluators)
         self._num_negatives = num_negatives
@@ -52,8 +90,6 @@ class ModelTrainer(object):
                             print colored('..(dataset: %s)' % dataset.name, 'green'), \
                                 key, average_result
                 acc_loss = 0
-
-        return loss
 
     def _score_full_items(self, users):
 
@@ -102,8 +138,8 @@ class ModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
 
-        for user in tqdm(eval_dataset.users):
-            items = self._sampled_negatives[user] + eval_dataset.gy_user_item[user].keys()
+        for user in tqdm(dataset.get_unique_user_list()):
+            items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user).keys()
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])
             for key in result:
@@ -117,15 +153,15 @@ class ModelTrainer(object):
         user_set = set()
 
         for dataset in eval_datasets:
-            user_set = user_set.union(dataset.users)
+            user_set = user_set.union(dataset.get_unique_user_list())
         for user in user_set:
             self._excluded_positives[user] = set()
         for user in user_set:
-            if user in self._train_dataset.gy_user_item:
-                self._excluded_positives[user] = self._excluded_positives[user].union(self._train_dataset.gy_user_item[user].keys())
+            if self._train_dataset.contain_user(user):
+                self._excluded_positives[user] = self._excluded_positives[user].union(self._train_dataset.get_interactions_by_user_gb_item(user).keys())
             for dataset in eval_datasets:
-                if user in dataset.gy_user_item:
-                    self._excluded_positives[user] = self._excluded_positives[user].union(dataset.gy_user_item[user].keys())
+                if dataset.contain_user(user):
+                    self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user).keys())
 
 
     def _sample_nagatives(self):

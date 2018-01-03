@@ -1,9 +1,9 @@
 <div align="center">
-  <a  href="http://www.openren.ai/"><img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/openrec.png?raw=true" width="60%"></a><br><br>
+  <a  href="http://www.openrec.ai/" target="_blank"><img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/openrec.png?raw=true" width="60%"></a><br><br>
 </div>
 
 
-[**OpenRec**](http://www.openren.ai/) is an open-source and modular library for neural network-inspired recommendation algorithms. Each recommender is modeled as a computational graph that consists of a structured ensemble of reusable modules connected through a set of well-defined interfaces. OpenRec is built to ease the process of extending and adapting state-of-the-art neural recommenders to heterogeneous recommendation scenarios, where different users', items', and contextual data sources need to be incorporated.
+[**OpenRec**](http://www.openrec.ai/) is an open-source and modular library for neural network-inspired recommendation algorithms. Each recommender is modeled as a computational graph that consists of a structured ensemble of reusable modules connected through a set of well-defined interfaces. OpenRec is built to ease the process of extending and adapting state-of-the-art neural recommenders to heterogeneous recommendation scenarios, where different users', items', and contextual data sources need to be incorporated.
 
 **For the structure and the design philosophy of OpenRec, please refer to the following paper published in WSDM'18:** 
 

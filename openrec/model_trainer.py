@@ -3,6 +3,7 @@ import math
 from termcolor import colored
 import numpy as np
 from openrec.utils.evaluators import EvalManager
+import sys
 
 class ModelTrainer(object):
 
@@ -80,6 +81,7 @@ class ModelTrainer(object):
                 print colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr)
                 for dataset in eval_datasets:
                     print colored('..(dataset: %s) evaluation' % dataset.name, 'green')
+                    sys.stdout.flush()
                     eval_results = eval_func(eval_dataset=dataset)
                     for key, result in eval_results.items():
                         average_result = np.mean(result, axis=0)
@@ -120,11 +122,11 @@ class ModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
             
-        for itr in tqdm(range(int(math.ceil(float(eval_dataset.num_user) / self._test_batch_size)))):
-            users = eval_dataset.users[itr * self._test_batch_size:(itr + 1) * self._test_batch_size]
+        for itr in tqdm(range(int(math.ceil(float(eval_dataset.unique_user_count()) / self._test_batch_size)))):
+            users = eval_dataset.get_unique_user_list()[itr * self._test_batch_size:(itr + 1) * self._test_batch_size]
             scores = self._score_full_items(users=users)
             for u_ind, user in enumerate(users):
-                result = self._eval_manager.full_eval(pos_samples=eval_dataset.gy_user_item[user].keys(),
+                result = self._eval_manager.full_eval(pos_samples=eval_dataset.get_interactions_by_user_gb_item(user).keys(),
                                         excl_pos_samples=self._excluded_positives[user],
                                                     predictions=scores[u_ind])
                 for key in result:
@@ -168,7 +170,7 @@ class ModelTrainer(object):
 
         print colored('[Subsampling negative items]', 'red')
         self._sampled_negatives = {}
-        for user in tqdm(self._excluded_positives):
+        for user in tqdm(self._excluded_positives, leave=False):
             shuffled_items = np.random.permutation(self._max_item)
             subsamples = []
             for item in shuffled_items:

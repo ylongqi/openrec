@@ -11,7 +11,7 @@ class _PointwiseSampler(Process):
         self._batch_size = batch_size
         self._num_pos = int(batch_size * pos_ratio)
 
-        self._user_list = self._dataset.gy_user_item.keys()
+        self._user_list = self._dataset.get_unique_user_list()
         self._q = q
         self._state = 0
         super(_PointwiseSampler, self).__init__()
@@ -35,10 +35,10 @@ class _PointwiseSampler(Process):
             for ind in range(self._batch_size - self._num_pos):
                 user_ind = int(random.random() * (len(self._user_list) - 1))
                 user_id = self._user_list[user_ind]
-                neg_id = int(random.random() * (self._dataset.max_item - 1))
+                neg_id = int(random.random() * (self._dataset.max_item() - 1))
 
-                while neg_id in self._dataset.gy_user_item[user_id]:
-                    neg_id = int(random.random() * (self._dataset.max_item - 1))
+                while neg_id in self._dataset.get_interactions_by_user_gb_item(user_id):
+                    neg_id = int(random.random() * (self._dataset.max_item() - 1))
                 input_npy[ind + self._num_pos] = (user_id, neg_id, 0.0)
                 
             self._state += self._num_pos

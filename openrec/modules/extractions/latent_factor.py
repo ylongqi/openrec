@@ -1,8 +1,5 @@
-from __future__ import print_function
 import tensorflow as tf
-from termcolor import colored
 from openrec.modules.extractions import Extraction
-
 
 class LatentFactor(Extraction):
 
@@ -43,17 +40,17 @@ class LatentFactor(Extraction):
 
         with tf.variable_scope(self._scope, reuse=self._reuse):
             
-            embedding = tf.get_variable('embedding', shape=self._shape, trainable=True,
+            self._embedding = tf.get_variable('embedding', shape=self._shape, trainable=True,
                                       initializer=self._initializer)
 
             if self._ids is not None:
-                self._outputs.append(tf.nn.embedding_lookup(embedding, self._ids))
+                self._outputs.append(tf.nn.embedding_lookup(self._embedding, self._ids))
 
                 if self._l2_reg is not None:
                     self._loss = self._l2_reg * tf.nn.l2_loss(self._outputs[0])
                     
             else:
-                self._outputs.append(embedding)
+                self._outputs.append(self._embedding)
 
     def censor_l2_norm_op(self, censor_id_list=None, max_norm=1):
 
@@ -72,10 +69,8 @@ class LatentFactor(Extraction):
             An operator for post-training execution.
         """
 
-        with tf.variable_scope(self._scope, reuse=True):
-            embedding = tf.get_variable('embedding', shape=self._shape, trainable=True,
-                                        initializer=self._initializer)
-            embedding_gather = tf.gather(embedding, indices=censor_id_list)
+        
+        embedding_gather = tf.gather(self._embedding, indices=censor_id_list)
         norm = tf.sqrt(tf.reduce_sum(tf.square(embedding_gather), axis=1, keep_dims=True))
-        return tf.scatter_update(embedding, indices=censor_id_list, updates=embedding_gather / tf.maximum(norm, max_norm))
+        return tf.scatter_update(self._embedding, indices=censor_id_list, updates=embedding_gather / tf.maximum(norm, max_norm))
 

@@ -114,10 +114,9 @@ class MultiLayerFC(Extraction):
                     if self._dropout_out is not None:
                         _out = tf.nn.dropout(_out, 1 - self._dropout_out)
                 if self._batch_norm:
-                    _out = tf.cond(self._train, lambda: tf.contrib.layers.batch_norm(_out, fused=True, decay=0.95, 
-                                        center=True, scale=True, is_training=True, reuse=False, scope="bn_"+str(index)), 
-                            lambda: tf.contrib.layers.batch_norm(_out, fused=True, decay=0.95, 
-                                        center=True, scale=True, is_training=False, reuse=True,scope="bn_"+str(index)))
+                    _out = tf.contrib.layers.batch_norm(_out, fused=True, decay=0.95, 
+                                        center=True, scale=True, is_training=self._train, 
+                                        reuse=False, scope="bn_"+str(index), updates_collections=None)
                 _in = _out
             self._outputs.append(_out)
 

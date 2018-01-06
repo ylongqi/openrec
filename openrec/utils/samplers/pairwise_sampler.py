@@ -1,7 +1,8 @@
 from __future__ import print_function
 import numpy as np
 import random
-from multiprocessing import Process, Queue
+from multiprocessing import Process
+from openrec.utils.samplers import Sampler
 
 class _PairwiseSampler(Process):
 
@@ -34,24 +35,18 @@ class _PairwiseSampler(Process):
             self._q.put(input_npy, block=True)
 
 
-class PairwiseSampler(object):
+class PairwiseSampler(Sampler):
 
     def __init__(self, dataset, batch_size, chronological=False, num_process=5):
-
-        self._q = Queue(maxsize=5)
-        self._runner_list = []
-
+        
+        self._chronological = chronological
         if chronological:
             num_process = 1
+        
+        super(PairwiseSampler, self).__init__(dataset=dataset, batch_size=batch_size, num_process=num_process)
 
-        for i in range(num_process):
-            runner = _PairwiseSampler(dataset=dataset,
-                                      batch_size=batch_size,
-                                      q=self._q)
-            runner.daemon = True
-            runner.start()
-            self._runner_list.append(runner)
-
-    def next_batch(self):
-        # model.push_batch(self._q.get(block=True))
-        return self._q.get(block=True)
+    def _get_runner(self):
+        
+        return _PairwiseSampler(dataset=self._dataset,
+                               batch_size=self._batch_size,
+                               q=self._q)

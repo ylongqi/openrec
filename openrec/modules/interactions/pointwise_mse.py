@@ -31,8 +31,12 @@ class PointwiseMSE(Interaction):
         The value of :math:`c_{ij}` if :math:`r_{ij}=1`.
     b: float, optional
         The value of :math:`c_{ij}` if :math:`r_{ij}=0`.
+    sigmoid: bool, optional
+        Normalize the dot products, i.e., sigmoid(:math:`u_i^T v_j`).
     train: bool, optionl
         An indicator for training or servining phase.
+    batch_serving: bool, optional
+        If True, the model calculates scores for all users against all items, and returns scores with shape [len(user), len(item)]. Otherwise, it returns scores for specified user item pairs (require :code:`len(user)==len(item)`).
     scope: str, optional
         Scope for module variables.
     reuse: bool, optional
@@ -45,7 +49,7 @@ class PointwiseMSE(Interaction):
     """
 
     def __init__(self, user, item, item_bias, labels=None, a=1.0, b=1.0, 
-                train=True, scope=None, reuse=False):
+                sigmoid=False, train=True, batch_serving=True, scope=None, reuse=False):
 
         assert train is not None, 'train cannot be None'
         assert user is not None, 'user cannot be None'
@@ -55,6 +59,8 @@ class PointwiseMSE(Interaction):
         self._user = user
         self._item = item
         self._item_bias = item_bias
+        self._sigmoid = sigmoid
+        self._batch_serving = batch_serving
 
         if train:
             assert labels is not None, 'labels cannot be None'
@@ -71,11 +77,26 @@ class PointwiseMSE(Interaction):
             labels_weight = (self._a - self._b) * self._labels + self._b
             dot_user_item = tf.reduce_sum(tf.multiply(self._user, self._item),
                                           axis=1, keep_dims=False, name="dot_user_item")
-
-            prediction = tf.sigmoid(dot_user_item + self._item_bias)
+            
+            if self._sigmoid:
+                prediction = tf.sigmoid(dot_user_item + tf.reshape(self._item_bias, [-1]))
+            else:
+                prediction = dot_user_item + tf.reshape(self._item_bias, [-1])
+                
             self._loss = tf.nn.l2_loss(labels_weight * (self._labels - prediction))
 
     def _build_serving_graph(self):
         
         with tf.variable_scope(self._scope, reuse=self._reuse):
-            self._outputs.append(tf.matmul(self._user, self._item, transpose_b=True) + tf.reshape(self._item_bias, [-1]))
+            
+            if self._batch_serving:
+                prediction = tf.matmul(self._user, self._item, transpose_b=True) + tf.reshape(self._item_bias, [-1])
+            else:
+                dot_user_item = tf.reduce_sum(tf.multiply(self._user, self._item),
+                                          axis=1, keep_dims=False, name="dot_user_item")
+                prediction = dot_user_item + tf.reshape(self._item_bias, [-1])
+            
+            if self._sigmoid:
+                prediction = tf.sigmoid(prediction)
+                
+            self._outputs.append(prediction)

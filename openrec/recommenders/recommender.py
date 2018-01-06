@@ -105,7 +105,7 @@ class Recommender(object):
             if self._opt == 'Adam':
                 self._lr = 0.001
             elif self._opt == 'SGD':
-                self._lr = 0.05
+                self._lr = 0.005
         else:
             self._lr = lr
 

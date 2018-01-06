@@ -1,14 +1,16 @@
+from __future__ import print_function
 from tqdm import tqdm
 import math
 from termcolor import colored
 import numpy as np
-from openrec.utils.evaluators import EvalManager
+from openrec.utils.evaluators import ImplicitEvalManager
 import sys
 
-class ModelTrainer(object):
+class ImplicitModelTrainer(object):
 
     """
-    The ModelTrainer class implements logics for basic recommender training and evaluation. 
+    The ImplicitModelTrainer class implements logics for basic recommender training and evaluation using users' 
+    *implicit feedback*. 
 
     Parameters
     ----------
@@ -60,17 +62,17 @@ class ModelTrainer(object):
             If specified, a given number of items NOT interacted with each user will be sampled (as negative items) for evaluations.
         """
         acc_loss = 0
-        self._eval_manager = EvalManager(evaluators=evaluators)
+        self._eval_manager = ImplicitEvalManager(evaluators=evaluators)
         self._num_negatives = num_negatives
         self._exclude_positives(eval_datasets)
 
         if self._num_negatives is None:
             eval_func = self._evaluate_full
-            print colored('== Start training with FULL evaluation ==', 'blue')
+            print(colored('== Start training with FULL evaluation ==', 'blue'))
         else:
             eval_func = self._evaluate_partial
-            self._sample_nagatives()
-            print colored('== Start training with sampled evaluation, sample size: %d ==' % num_negatives, 'blue')
+            self._sample_negatives()
+            print(colored('== Start training with sampled evaluation, sample size: %d ==' % num_negatives, 'blue'))
 
         for itr in range(num_itr):
             batch_data = self._sampler.next_batch()
@@ -78,19 +80,19 @@ class ModelTrainer(object):
             acc_loss += loss
 
             if itr % display_itr == 0 and itr > 0:
-                print colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr)
+                print(colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr))
                 for dataset in eval_datasets:
-                    print colored('..(dataset: %s) evaluation' % dataset.name, 'green')
+                    print(colored('..(dataset: %s) evaluation' % dataset.name, 'green'))
                     sys.stdout.flush()
                     eval_results = eval_func(eval_dataset=dataset)
                     for key, result in eval_results.items():
                         average_result = np.mean(result, axis=0)
                         if type(average_result) is np.ndarray:
-                            print colored('..(dataset: %s)' % dataset.name, 'green'), \
-                                key, ' '.join([str(s) for s in average_result])
+                            print(colored('..(dataset: %s)' % dataset.name, 'green'), \
+                                key, ' '.join([str(s) for s in average_result]))
                         else:
-                            print colored('..(dataset: %s)' % dataset.name, 'green'), \
-                                key, average_result
+                            print(colored('..(dataset: %s)' % dataset.name, 'green'), \
+                                key, average_result)
                 acc_loss = 0
 
     def _score_full_items(self, users):
@@ -166,9 +168,9 @@ class ModelTrainer(object):
                     self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user).keys())
 
 
-    def _sample_nagatives(self):
+    def _sample_negatives(self):
 
-        print colored('[Subsampling negative items]', 'red')
+        print(colored('[Subsampling negative items]', 'red'))
         self._sampled_negatives = {}
         for user in tqdm(self._excluded_positives, leave=False):
             shuffled_items = np.random.permutation(self._max_item)

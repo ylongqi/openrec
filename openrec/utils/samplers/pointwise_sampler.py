@@ -1,7 +1,7 @@
-from __future__ import print_function
 import numpy as np
 import random
-from multiprocessing import Process, Queue
+from multiprocessing import Process
+from openrec.utils.samplers import Sampler
 
 class _PointwiseSampler(Process):
 
@@ -45,25 +45,21 @@ class _PointwiseSampler(Process):
             self._q.put(input_npy, block=True)
 
 
-class PointwiseSampler(object):
+class PointwiseSampler(Sampler):
 
     def __init__(self, dataset, batch_size, pos_ratio=0.5, num_process=5, chronological=False):
-
-        self._q = Queue(maxsize=5)
-        self._runner_list = []
-
+        
+        self._pos_ratio = pos_ratio
+        self._chronological = chronological
+        
         if chronological:
             num_process = 1
 
-        for i in range(num_process):
-            runner = _PointwiseSampler(dataset=dataset,
-                                   pos_ratio=pos_ratio,
-                                   batch_size=batch_size,
-                                   q=self._q)
-            runner.daemon = True
-            runner.start()
-            self._runner_list.append(runner)
-
-    def next_batch(self):
-
-        return self._q.get(block=True)
+        super(PointwiseSampler, self).__init__(dataset=dataset, batch_size=batch_size, num_process=num_process)
+        
+    def _get_runner(self):
+        
+        return _PointwiseSampler(dataset=self._dataset,
+                               pos_ratio=self._pos_ratio,
+                               batch_size=self._batch_size,
+                               q=self._q)

@@ -50,7 +50,8 @@ class Module(object):
 
         self._loss = 0.0
         self._outputs = []
-
+        self._train = train
+        
         if train:
             self._build_shared_graph()
             self._build_training_graph()

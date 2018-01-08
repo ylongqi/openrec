@@ -1,5 +1,4 @@
 numpy
-scipy
 tensorflow
 tqdm
 termcolor

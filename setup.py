@@ -12,8 +12,7 @@ setup(
         'tensorflow>=1.3.0',
         'tqdm>=4.15.0',
         'numpy>=1.13.0',
-        'termcolor>=1.1.0',
-        'scipy>=0.19.1'
+        'termcolor>=1.1.0'
           ],
     classifiers=['Development Status :: 3 - Alpha',
                  'License :: OSI Approved :: Apache 2.0',

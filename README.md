@@ -17,7 +17,7 @@
 
 * [OpenRec website](http://www.openrec.ai/)
 * [OpenRec documents](http://openrec.readthedocs.io/en/latest/)
-* OpenRec tutorials (coming soon)
+* [OpenRec tutorials](https://github.com/ylongqi/openrec/tree/master/tutorials)
 
 ## How to cite
 

@@ -2,8 +2,8 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from openrec import ModelTrainer
-from openrec.utils import Dataset
+from openrec import ImplicitModelTrainer
+from openrec.utils import ImplicitDataset
 from openrec.recommenders import PMF
 from openrec.utils.evaluators import AUC, Recall
 from openrec.utils.samplers import PointwiseSampler
@@ -15,14 +15,14 @@ batch_size = 1000
 test_batch_size = 100
 display_itr = 10000
 
-train_dataset = Dataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
-val_dataset = Dataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
-test_dataset = Dataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
+train_dataset = ImplicitDataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
+val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
+test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
-model = PMF(batch_size=batch_size, max_user=train_dataset.max_user, max_item=train_dataset.max_item, 
+model = PMF(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
                 dim_embed=20, opt='Adam', sess_config=sess_config)
 sampler = PointwiseSampler(batch_size=batch_size, dataset=train_dataset, pos_ratio=0.2, num_process=1)
-model_trainer = ModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
+model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
     train_dataset=train_dataset, model=model, sampler=sampler)
 
 auc_evaluator = AUC()

@@ -1,63 +1,30 @@
-from __future__ import print_function
-from openrec.algorithms.basic_cml import BasicCML
-from openrec.utils.samplers import PairwiseSampler
+import os
+import sys
+sys.path.append(os.getcwd())
+
+from openrec import ImplicitModelTrainer
+from openrec.utils import ImplicitDataset
+from openrec.recommenders import CML
 from openrec.utils.evaluators import AUC
-from ..utils.dataset import Dataset
-import numpy as np
-import random
-from tqdm import tqdm
-import math
+from openrec.utils.samplers import PairwiseSampler
+from config import sess_config
+import dataloader
 
-print('==> Load dataset')
+raw_data = dataloader.load_citeulike()
+batch_size = 1000
+test_batch_size = 100
+display_itr = 10000
 
-'''
-from .dataloader.tradesy import *
+train_dataset = ImplicitDataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
+val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
+test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
-BATCH_SIZE = 10000
-TEST_BATCH_SIZE = 100
-DISPLAY_ITR = 10000
-'''
+cml_model = CML(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
+                dim_embed=20, opt='Adam', sess_config=sess_config)
+sampler = PairwiseSampler(batch_size=batch_size, dataset=train_dataset, num_process=1)
+model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
+    train_dataset=train_dataset, model=cml_model, sampler=sampler)
+auc_evaluator = AUC()
 
-from .dataloader.citeulike import *
-
-BATCH_SIZE = 1000
-TEST_BATCH_SIZE = 100
-DISPLAY_ITR = 10000
-
-dataset = Dataset(user_data_train_dict,user_data_vali_dict,user_data_test_dict)
-
-cml_model = BasicCML(batch_size=BATCH_SIZE, num_user=NUM_USER, num_item=NUM_ITEM, dim_embed=20)
-sampler = PairwiseSampler(batch_size=BATCH_SIZE, train_data=dataset.train, num_process=1)
-evaluator = AUC()
-
-acc_loss = 0
-
-for itr in range(int(5e8)):
-    sampler.next_batch(cml_model)
-    loss = cml_model.train()
-    acc_loss += loss
-
-    if itr % DISPLAY_ITR == 0:
-        print ('==> iteration %d, loss %f' % (itr, acc_loss / DISPLAY_ITR))
-        acc_loss = 0
-
-        print('==> Validation %d itr' % itr)
-        val_auc_list = []
-        for val_itr in tqdm(range(int(math.ceil(NUM_USER / TEST_BATCH_SIZE)))):
-            rankings = cml_model.serve(np.arange(val_itr*TEST_BATCH_SIZE, min(NUM_USER, (val_itr + 1) * TEST_BATCH_SIZE)))
-            for val_ind, ranking in enumerate(rankings):
-                user_id = val_itr * TEST_BATCH_SIZE + val_ind
-                val_auc_list.append(evaluator.calculate(pos_samples=dataset.vali.get_reduced_user_interactions(user_id),predictions=ranking,neg_samples=dataset.all.get_reduced_user_interactions(user_id,pos=False)))
-
-        print ('==> Validation AUC: %f' % np.mean(val_auc_list))
-
-        print ('==> Test %d itr' % itr)
-        test_auc_list = []
-        for test_itr in tqdm(range(int(math.ceil(NUM_USER / TEST_BATCH_SIZE)))):
-            rankings = cml_model.serve(np.arange(val_itr*TEST_BATCH_SIZE, min(NUM_USER, (val_itr + 1) * TEST_BATCH_SIZE)))
-
-            for test_ind, ranking in enumerate(rankings):
-                user_id = test_itr * TEST_BATCH_SIZE + test_ind
-                test_auc_list.append(evaluator.calculate(pos_samples=dataset.test.get_reduced_user_interactions(user_id),predictions=ranking,neg_samples=dataset.all.get_reduced_user_interactions(user_id,pos=False)))
-
-        print ('==> Test AUC: %f' % np.mean(test_auc_list))
+model_trainer.train(num_itr=int(1e6), display_itr=display_itr, eval_datasets=[val_dataset, test_dataset],
+                    evaluators=[auc_evaluator])

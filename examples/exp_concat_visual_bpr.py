@@ -2,8 +2,8 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from openrec import ModelTrainer
-from openrec.utils import Dataset
+from openrec import ImplicitModelTrainer
+from openrec.utils import ImplicitDataset
 from openrec.recommenders import ConcatVisualBPR
 from openrec.utils.evaluators import AUC
 from openrec.utils.samplers import PairwiseSampler
@@ -16,14 +16,14 @@ test_batch_size = 100
 item_serving_size = 1000
 display_itr = 10000
 
-train_dataset = Dataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
-val_dataset = Dataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
-test_dataset = Dataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
+train_dataset = ImplicitDataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
+val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
+test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
 model = ConcatVisualBPR(batch_size=batch_size, max_user=raw_data['max_user'], max_item=raw_data['max_item'], item_serving_size=item_serving_size,
                 dim_embed=20, dim_ve=10, item_f=raw_data['item_features'], l2_reg=None, sess_config=sess_config)
 sampler = PairwiseSampler(batch_size=batch_size, dataset=train_dataset, num_process=1)
-model_trainer = ModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, item_serving_size=item_serving_size,
+model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, item_serving_size=item_serving_size,
     train_dataset=train_dataset, model=model, sampler=sampler)
 
 auc_evaluator = AUC()

@@ -13,11 +13,16 @@
 
 `pip install openrec` (coming soon)
 
+## Dataset download
+
+Use `download_dataset.sh` script.
+
 ## Get started
 
 * [OpenRec website](http://www.openrec.ai/)
 * [OpenRec documents](http://openrec.readthedocs.io/en/latest/)
 * [OpenRec tutorials](https://github.com/ylongqi/openrec/tree/master/tutorials)
+* [OpenRec examples](https://github.com/ylongqi/openrec/blob/master/examples)
 
 ## How to cite
 

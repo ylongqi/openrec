@@ -7,19 +7,16 @@ Evaluators package
 Evaluator
 ---------
 
-
-
-
 .. autoclass:: Evaluator
     :members:
     :undoc-members:
     :private-members:
 
 
-Eval Manager
-------------
+Implicit Eval Manager
+---------------------
 
-.. autoclass:: EvalManager
+.. autoclass:: ImplicitEvalManager
     :members:
     :undoc-members:
     :private-members:
@@ -38,6 +35,14 @@ Recall
 -------
 
 .. autoclass:: Recall
+    :members:
+    :undoc-members:
+    :private-members:
+
+MSE
+-------
+
+.. autoclass:: MSE
     :members:
     :undoc-members:
     :private-members:

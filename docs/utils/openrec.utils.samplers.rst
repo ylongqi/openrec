@@ -4,12 +4,24 @@ Samplers
 .. automodule:: openrec.utils.samplers
 .. currentmodule:: openrec.utils.samplers
 
+Sampler
+----------------
+
+.. autoclass:: Sampler
+    :members:
+    :undoc-members:
+    :private-members:
+
+Explicit Sampler
+----------------
+
+.. autoclass:: ExplicitSampler
+    :members:
+    :undoc-members:
+    :private-members:
 
 Pairwise Sampler
 ----------------
-
-
-
 
 .. autoclass:: PairwiseSampler
     :members:
@@ -18,7 +30,6 @@ Pairwise Sampler
 
 Pointwise Sampler
 -----------------
-
 
 .. autoclass:: PointwiseSampler
     :members:

@@ -54,3 +54,11 @@ SDAE
     :members:
     :undoc-members:
     :private-members:
+
+TemporalLatentFactor
+--------------------
+
+.. autoclass:: TemporalLatentFactor
+    :members:
+    :undoc-members:
+    :private-members:

@@ -18,7 +18,7 @@ OpenRec is an open-source and modular library for neural network-inspired recomm
       Modules <modules/openrec.modules>
       Recommenders  <recommenders/recommenders>
       Utils  <utils/utils>
-      Model Trainer <openrec.model_trainer>
+      Implicit Model Trainer <openrec.implicit_model_trainer>
 
 
 

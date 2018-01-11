@@ -142,7 +142,7 @@ class ImplicitModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
 
-        for user in tqdm(dataset.get_unique_user_list()):
+        for user in tqdm(eval_dataset.get_unique_user_list()):
             items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user).keys()
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])

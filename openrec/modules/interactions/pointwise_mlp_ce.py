@@ -52,7 +52,7 @@ class PointwiseMLPCE(Interaction):
 
         self._dims = dims
 
-        super(PointwiseMLP, self).__init__(l2_reg=l2_reg, train=train, scope=scope, reuse=reuse)
+        super(PointwiseMLPCE, self).__init__(l2_reg=l2_reg, train=train, scope=scope, reuse=reuse)
 
     def _build_training_graph(self):
 

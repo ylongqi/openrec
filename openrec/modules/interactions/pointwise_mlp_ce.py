@@ -25,10 +25,12 @@ class PointwiseMLPCE(Interaction):
         Weight for L2 regularization, i.e., weight decay.
     labels: Tensorflow tensor, required for training.
         Groundtruth labels for the interactions. Shape **[number of interactions, ]**.
-    dropout: float, optional.
+    dropout: float, optional
         Dropout rate for MLP (intermediate layers only).
-    train: bool, optionl
+    train: bool, optional
         An indicator for training or servining phase.
+    batch_serving: bool, optional
+        An indicator for batch serving / pointwise serving.
     scope: str, optional
         Scope for module variables.
     reuse: bool, optional
@@ -36,7 +38,7 @@ class PointwiseMLPCE(Interaction):
     """
 
     def __init__(self, user, item, item_bias, dims, l2_reg=None, labels=None,
-                 dropout=None, train=None, scope=None, reuse=False):
+                 dropout=None, train=None, batch_serving=True, scope=None, reuse=False):
         
         assert dims is not None, 'dims cannot be None'
         assert dims[-1] == 1, 'last value of dims should be 1'
@@ -45,6 +47,7 @@ class PointwiseMLPCE(Interaction):
         self._item = item
         self._item_bias = item_bias
         self._dropout = dropout
+        self._batch_serving = batch_serving
 
         if train:
             assert labels is not None, 'labels cannot be None'
@@ -78,18 +81,31 @@ class PointwiseMLPCE(Interaction):
     def _build_serving_graph(self):
         
         with tf.variable_scope(self._scope, reuse=self._reuse):
-            user_rep = tf.reshape(tf.tile(self._user, [1, tf.shape(self._item)[0]]), (-1, tf.shape(self._user)[1]))
-            item_rep = tf.tile(self._item, (tf.shape(self._user)[0], 1))
-            item_bias_rep = tf.tile(self._item_bias, (tf.shape(self._user)[0], 1))
-            in_tensor = tf.concat([user_rep, item_rep], axis=1)
-            reg = MultiLayerFC(
-                in_tensor=in_tensor,
-                dims=self._dims,
-                bias_in=True,
-                bias_mid=True,
-                bias_out=False,
-                l2_reg=self._l2_reg,
-                scope='mlp_reg',
-                reuse=self._reuse)
+            if self._batch_serving:
+                user_rep = tf.reshape(tf.tile(self._user, [1, tf.shape(self._item)[0]]), (-1, tf.shape(self._user)[1]))
+                item_rep = tf.tile(self._item, (tf.shape(self._user)[0], 1))
+                item_bias_rep = tf.tile(self._item_bias, (tf.shape(self._user)[0], 1))
+                in_tensor = tf.concat([user_rep, item_rep], axis=1)
+                reg = MultiLayerFC(in_tensor=in_tensor,
+                                   dims=self._dims,
+                                   bias_in=True,
+                                   bias_mid=True,
+                                   bias_out=False,
+                                   l2_reg=self._l2_reg,
+                                   scope='mlp_reg',
+                                   reuse=self._reuse)
+                self._outputs.append(tf.reshape(reg.get_outputs()[0] + item_bias_rep, (tf.shape(self._user)[0], tf.shape(self._item)[0])))
+            
+            else:
+                in_tensor = tf.concat([self._user, self._item], axis=1)
+                reg = MultiLayerFC(in_tensor=in_tensor,
+                                   dims=self._dims,
+                                   bias_in=True,
+                                   bias_mid=True,
+                                   bias_out=False,
+                                   l2_reg=self._l2_reg,
+                                   scope='mlp_reg',
+                                   reuse=self._reuse)
+                logits = reg.get_outputs()[0] + self._item_bias
+                self._outputs.append(tf.sigmoid(logits))
 
-            self._outputs.append(tf.reshape(reg.get_outputs()[0] + item_bias_rep, (tf.shape(self._user)[0], tf.shape(self._item)[0])))

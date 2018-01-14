@@ -25,10 +25,12 @@ class PointwiseMLPCE(Interaction):
         Weight for L2 regularization, i.e., weight decay.
     labels: Tensorflow tensor, required for training.
         Groundtruth labels for the interactions. Shape **[number of interactions, ]**.
-    dropout: float, optional.
+    dropout: float, optional
         Dropout rate for MLP (intermediate layers only).
-    train: bool, optionl
+    train: bool, optional
         An indicator for training or servining phase.
+    batch_serving: bool, optional
+        An indicator for batch serving / pointwise serving.
     scope: str, optional
         Scope for module variables.
     reuse: bool, optional

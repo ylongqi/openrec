@@ -44,7 +44,7 @@ Use `download_dataset.sh` script.
 
 ## Funders
 <div>
-  <img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/imgs/funderlogonew.png?raw=true" width="60%"><br><br>
+  <img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/imgs/funderlogonew.png?raw=true" width="40%"><br><br>
 </div>
 
 

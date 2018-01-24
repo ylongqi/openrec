@@ -11,3 +11,4 @@ from visual_gmf import VisualGMF
 from user_pmf import UserPMF
 from user_visual_pmf import UserVisualPMF
 from itr_mlp import ItrMLP
+from FeatureBasedBPR import FeatureBasedBPR 

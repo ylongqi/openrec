@@ -23,40 +23,32 @@ class VisualPMF(PMF):
         
         super(VisualPMF, self)._build_item_inputs(train)
         if train:
-            self._item_vfeature_input = self._input(dtype='float32', shape=[self._batch_size, self._item_f_source.shape[1]], 
-                                                name='item_vfeature_input')
+            self._add_input(name='item_vfeature', dtype='float32', shape=[self._batch_size, self._item_f_source.shape[1]])
         else:
-            self._item_id_serving = self._input(dtype='int32', shape=[None],
-                                                name='item_id_serving')
-            self._item_vfeature_serving = self._input(dtype='float32', shape=[None, self._item_f_source.shape[1]], 
-                                                name='item_vfeature_serving')
+            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
+            self._add_input(name='item_vfeature', dtype='float32', shape=[None, self._item_f_source.shape[1]], train=False)
 
     def _input_mappings(self, batch_data, train):
 
         default_input_map = super(VisualPMF, self)._input_mappings(batch_data=batch_data, train=train)
         if train:
-            default_input_map[self._item_vfeature_input] = self._item_f_source[batch_data['item_id_input']]
+            default_input_map[self._get_input('item_vfeature')] = self._item_f_source[batch_data['item_id_input']]
         else:
-            default_input_map[self._item_id_serving] = batch_data['item_id_input']
-            default_input_map[self._item_vfeature_serving] = self._item_f_source[batch_data['item_id_input']]
+            default_input_map[self._get_input('item_id', train=False)] = batch_data['item_id_input']
+            default_input_map[self._get_input('item_vfeature', train=False)] = self._item_f_source[batch_data['item_id_input']]
         return default_input_map
 
     def _build_item_extractions(self, train=True):
 
         super(VisualPMF, self)._build_item_extractions(train)
-
-        if train:
-            self._item_vf = MultiLayerFC(in_tensor=self._item_vfeature_input, dims=self._dims, l2_reg=self._l2_reg_mlp,
-                            dropout_mid=self._dropout_rate, scope='item_MLP', reuse=False)
-            self._loss_nodes += [self._item_vf]
-        else:
-            self._item_vf_serving = MultiLayerFC(in_tensor=self._item_vfeature_serving, dims=self._dims, l2_reg=self._l2_reg_mlp,
-                            dropout_mid=self._dropout_rate, scope='item_MLP', reuse=True)
+        self._add_module('item_vf',
+                         MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=train), dims=self._dims, 
+                                      l2_reg=self._l2_reg_mlp, dropout_mid=self._dropout_rate, scope='item_MLP', reuse=not train),
+                         train=train)
 
     def _build_default_fusions(self, train=True):
 
-        if train:
-            self._item_vec = Average(scope='item_average', reuse=False, module_list=[self._item_vec, self._item_vf], weight=2.0)
-        else:
-            self._item_vec_serving = Average(scope='item_average', reuse=True, 
-                                module_list=[self._item_vec_serving, self._item_vf_serving], weight=2.0)
+        self._add_module('item_vec',
+                        Average(scope='item_average', reuse=not train, module_list=[self._get_module('item_vec', train=train), 
+                                self._get_module('item_vf', train=train)], weight=2.0),
+                        train=train)

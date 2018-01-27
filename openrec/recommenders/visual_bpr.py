@@ -55,7 +55,7 @@ class VisualBPR(BPR):
         else:
             self._add_module('item_vf',
                             MultiLayerFC(in_tensor=self._get_input('item_vfeature', 
-                                                dims=self._dims, scope='item_visual_embed', reuse=True),
+                                                dims=self._dims, scope='item_visual_embed', reuse=True)),
                             train=False)
 
     def _build_default_fusions(self, train=True):

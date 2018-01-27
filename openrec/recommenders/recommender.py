@@ -65,7 +65,7 @@ class Recommender(object):
     
         .. code:: python
 
-            self._add_input(name='input_name', dtype='float32', shape=data_shape, train=Trues)
+            self._add_input(name='input_name', dtype='float32', shape=data_shape, train=True)
 
         * **Define input mappings.** Override the function :code:`self._input_mappings` to feed a *batch_data* into the defined inputs. The mapping should be specified \
         using a python dict where a *key* corresponds to an input object retrieved by :code:`self._get_input(input_name, train=train)`, and a *value* corresponds to a :code:`batch_data` value.

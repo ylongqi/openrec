@@ -42,44 +42,52 @@ class ConcatVisualBPR(BPR):
         
     def _build_item_extractions(self, train=True):
 
-        super(ConcatVisualBPR, self)._build_item_extractions(train)
-
         if train:
             self._add_module('p_item_lf',
                             LatentFactor(init='normal', l2_reg=self._l2_reg, ids=self._get_input('p_item_id'), 
                                         shape=[self._max_item, self._dim_embed-self._dim_ve], scope='item', reuse=False))
             self._add_module('p_item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('p_item_vfeature'), dropout_mid=self._dropout_rate, 
+                            MultiLayerFC(in_tensor=self._get_input('p_item_vfeature'), 
                                         dims=[self._dim_ve], scope='item_MLP', reuse=False))
+            self._add_module('p_item_bias',
+                            LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('p_item_id'),
+                                        shape=[self._max_item, 1], scope='item_bias', reuse=False))
             self._add_module('n_item_lf',
                             LatentFactor(init='normal', l2_reg=self._l2_reg, ids=self._get_input('n_item_id'), 
                                         shape=[self._max_item, self._dim_embed-self._dim_ve], scope='item', reuse=True))
             self._add_module('n_item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('n_item_vfeature'), dropout_mid=self._dropout_rate, 
+                            MultiLayerFC(in_tensor=self._get_input('n_item_vfeature'), 
                                         dims=[self._dim_ve], scope='item_MLP', reuse=True))
+            self._add_module('n_item_bias',
+                            LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('n_item_id'),
+                                        shape=[self._max_item, 1], scope='item_bias', reuse=True))
         else:
             self._add_module('item_lf',
-                            LatentFactor(init='normal', l2_reg=self._l2_reg, ids=self._get_input('item_id'),
-                                                shape=[self._max_item, self._dim_embed-self._dim_ve], scope='item', reuse=True),
+                            LatentFactor(init='normal', l2_reg=self._l2_reg, ids=self._get_input('item_id', train=train),
+                                        shape=[self._max_item, self._dim_embed-self._dim_ve], scope='item', reuse=True),
                             train=False)
             self._add_module('item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('item_vfeature'), 
-                                                dims=[self._dim_ve], scope='item_MLP', reuse=True),
+                            MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=train), 
+                                        dims=[self._dim_ve], scope='item_MLP', reuse=True),
                             train=False)
+            self._add_module('item_bias',
+                            LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('item_id', train=train),
+                                        shape=[self._max_item, 1], scope='item_bias', reuse=True), 
+                             train=False)
 
     def _build_default_fusions(self, train=True):
         
         if train:
             self._add_module('p_item_vec',
                             Concat(scope='item_concat', reuse=False,
-                                    module_list=[self._get_module('p_item_lf'), self._get_module('p_item_vf')], weight=2.0))
+                                    module_list=[self._get_module('p_item_lf'), self._get_module('p_item_vf')]))
             self._add_module('n_item_vec',
                             Concat(scope='item_concat', reuse=True,
-                                    module_list=[self._get_module('n_item_lf'), self._get_module('n_item_vf')], weight=2.0))
+                                    module_list=[self._get_module('n_item_lf'), self._get_module('n_item_vf')]))
         else:
             self._add_module('item_vec',
                             Concat(scope='item_concat', reuse=True, 
-                                module_list=[self._get_module('item_lf'), self._get_module('item_vf')], weight=2.0),
+                                module_list=[self._get_module('item_lf', train=train), self._get_module('item_vf', train=train)]),
                             train=False)
 
     def _grad_post_processing(self, grad_var_list):

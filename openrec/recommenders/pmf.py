@@ -42,7 +42,7 @@ class PMF(Recommender):
     def _build_extra_inputs(self, train=True):
         
         if train:
-            self._add_input(name='lables', dtype='float32', shape=[self._batch_size])
+            self._add_input(name='labels', dtype='float32', shape=[self._batch_size])
 
     def _build_user_extractions(self, train=True):
 

@@ -183,8 +183,12 @@ class Recommender(object):
         A list of Numpy arrays
             The outputs of the specified module.
         """
-
+        
         module = self._get_module(name=name, train=train)
+        
+        if len(module.get_outputs()) == 0:
+            return []
+        
         return self._sess.run(module.get_outputs(), feed_dict=self._input_mappings(batch_data, train=train))
 
     def compute_module_loss(self, name, batch_data, train=True):
@@ -207,6 +211,10 @@ class Recommender(object):
         """
 
         module = self._get_module(name=name, train=train)
+        
+        if type(module.get_loss()) == float:
+            return module.get_loss()
+
         return self._sess.run(module.get_loss(), feed_dict=self._input_mappings(batch_data, train=train))
 
     def save(self, save_dir, step):

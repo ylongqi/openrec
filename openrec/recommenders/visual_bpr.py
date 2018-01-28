@@ -54,8 +54,8 @@ class VisualBPR(BPR):
                                         dims=self._dims, scope='item_visual_embed', reuse=True))
         else:
             self._add_module('item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('item_vfeature', 
-                                                dims=self._dims, scope='item_visual_embed', reuse=True)),
+                            MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=False), 
+                                                dims=self._dims, scope='item_visual_embed', reuse=True),
                             train=False)
 
     def _build_default_fusions(self, train=True):
@@ -70,7 +70,7 @@ class VisualBPR(BPR):
         else:
             self._add_module('item_vec',
                             Average(scope='item_concat', reuse=True, 
-                                module_list=[self._get_module('item_vec'), self._get_module('item_vf')], weight=2.0),
+                                module_list=[self._get_module('item_vec', train=train), self._get_module('item_vf', train=train)], weight=2.0),
                             train=False)
 
     def _grad_post_processing(self, grad_var_list):

@@ -5,7 +5,7 @@ from openrec.modules.fusions import Average
 class CDL(PMF):
 
     def __init__(self, batch_size, max_user, max_item, dim_embed, item_f, dims, dropout=None, test_batch_size=None,
-                    item_serving_size=None, l2_reg_lf=None, l2_reg_mlp=None, l2_reconst=None, opt='SGD',
+                    item_serving_size=None, l2_reg=None, l2_reg_mlp=None, l2_reconst=None, opt='SGD',
                     sess_config=None):
 
 
@@ -17,7 +17,7 @@ class CDL(PMF):
         self._l2_reconst = l2_reconst
 
         super(CDL, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, dim_embed=dim_embed,
-                                l2_reg=l2_reg_lf, self.test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
+                                l2_reg=l2_reg, self.test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
 
     def _build_item_inputs(self, train=True):
 

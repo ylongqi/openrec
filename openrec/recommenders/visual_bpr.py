@@ -6,18 +6,16 @@ class VisualBPR(BPR):
 
     def __init__(self, batch_size, max_user, max_item, dim_embed,
             dims, item_f_source, test_batch_size=None, item_serving_size=None,
-            dropout_rate=None, l2_reg_u=None, l2_reg_mlp=None, 
-            l2_reg_v=None, opt='Adam', sess_config=None):
+            dropout_rate=None, l2_reg=None, l2_reg_mlp=None, 
+            opt='Adam', sess_config=None):
 
         self._dims = dims
         self._dropout_rate = dropout_rate
         self._item_f_source = item_f_source
 
-        self._l2_reg_u = l2_reg_u
         self._l2_reg_mlp = l2_reg_mlp
-        self._l2_reg_v = l2_reg_v
 
-        super(VisualBPR, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item,
+        super(VisualBPR, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, l2_reg=l2_reg,
                                     test_batch_size=test_batch_size, dim_embed=dim_embed, sess_config=sess_config)
 
     def _build_item_inputs(self, train=True):
@@ -48,14 +46,14 @@ class VisualBPR(BPR):
         if train:
             self._add_module('p_item_vf',
                             MultiLayerFC(in_tensor=self._get_input('p_item_vfeature'), dropout_mid=self._dropout_rate, 
-                                        dims=self._dims, scope='item_visual_embed', reuse=False))
+                                        l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=False))
             self._add_module('n_item_vf',
                             MultiLayerFC(in_tensor=self._get_input('n_item_vfeature'), dropout_mid=self._dropout_rate, 
-                                        dims=self._dims, scope='item_visual_embed', reuse=True))
+                                        l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=True))
         else:
             self._add_module('item_vf',
                             MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=False), 
-                                                dims=self._dims, scope='item_visual_embed', reuse=True),
+                                        l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=True),
                             train=False)
 
     def _build_default_fusions(self, train=True):

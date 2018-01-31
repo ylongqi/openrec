@@ -6,7 +6,7 @@ class UserVisualPMF(VisualPMF):
 
     def __init__(self, batch_size, max_user, max_item, dim_embed, dims_user, dims_item, user_f_source, 
                     item_f_source, test_batch_size=None, item_serving_size=None, dropout_rate=None,
-                    l2_reg_u=None, l2_reg_mlp=None, l2_reg_v=None, opt='SGD', sess_config=None):
+                    l2_reg=None, l2_reg_mlp=None, opt='SGD', sess_config=None):
 
         self._dims_user = dims_user
         self._user_f_source = user_f_source
@@ -14,7 +14,7 @@ class UserVisualPMF(VisualPMF):
         super(UserVisualPMF, self).__init__(batch_size=batch_size, max_user=max_user,
             max_item=max_item, dim_embed=dim_embed, dims=dims_item, item_f_source=item_f_source,
             test_batch_size=test_batch_size, item_serving_size=item_serving_size, dropout_rate=dropout_rate,
-            l2_reg_u=l2_reg_u, l2_reg_mlp=l2_reg_mlp, l2_reg_v=l2_reg_v, opt=opt, sess_config=sess_config)
+            l2_reg=l2_reg, l2_reg_mlp=l2_reg_mlp, opt=opt, sess_config=sess_config)
 
     def _build_user_inputs(self, train=True):
         

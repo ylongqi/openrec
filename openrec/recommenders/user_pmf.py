@@ -5,19 +5,17 @@ from openrec.modules.fusions import Average
 class UserPMF(PMF):
 
     def __init__(self, batch_size, max_user, max_item, dim_embed, dims, user_f_source, test_batch_size=None, item_serving_size=None, dropout_rate=None,
-                    l2_reg_u=None, l2_reg_mlp=None, l2_reg_v=None, opt='SGD', sess_config=None):
+                    l2_reg=None, l2_reg_mlp=None, opt='SGD', sess_config=None):
 
         self._dims = dims
         self._dropout_rate = dropout_rate
         self._user_f_source = user_f_source
         self._item_serving_size = item_serving_size
-
-        self._l2_reg_u = l2_reg_u
+        
         self._l2_reg_mlp = l2_reg_mlp
-        self._l2_reg_v = l2_reg_v
 
         super(UserPMF, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, dim_embed=dim_embed,
-                                test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
+                                l2_reg=l2_reg, test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
 
     def _build_user_inputs(self, train=True):
         

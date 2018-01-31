@@ -13,12 +13,11 @@ class CDL(PMF):
         self._dims = dims
         self._dropout = dropout
 
-        self._l2_reg_lf = l2_reg_lf
         self._l2_reg_mlp = l2_reg_mlp
         self._l2_reconst = l2_reconst
 
         super(CDL, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, dim_embed=dim_embed,
-                                test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
+                                l2_reg=l2_reg_lf, self.test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
 
     def _build_item_inputs(self, train=True):
 

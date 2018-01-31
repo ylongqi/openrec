@@ -29,92 +29,79 @@ class ItrMLP(Recommender):
         
         super(ItrMLP, self)._initialize(init_dict=init_dict)
         print(colored('[Pretrain user MLP into identity]', 'blue'))
-        self._user_vec.pretrain_mlp_as_identity(self._sess)
+        self._get_module('user_vec').pretrain_mlp_as_identity(self._sess)
         print(colored('[Pretrain item MLP into identity]', 'blue'))
-        self._item_vec.pretrain_mlp_as_identity(self._sess)
+        self._get_module('item_vec').pretrain_mlp_as_identity(self._sess)
 
     def update_embeddings(self):
 
-        self._user_vec.forward_update_embeddings(self._sess)
-        self._item_vec.forward_update_embeddings(self._sess)
+        self._get_module('user_vec').forward_update_embeddings(self._sess)
+        self._get_module('item_vec').forward_update_embeddings(self._sess)
 
     def _input_mappings(self, batch_data, train):
 
         if train:
-            return {self._user_id_input: batch_data['user_id_input'],
-                    self._item_id_input: batch_data['item_id_input'],
-                    self._labels: batch_data['labels']}
+            return {self._get_input('user_id'): batch_data['user_id_input'],
+                    self._get_input('item_id'): batch_data['item_id_input'],
+                    self._get_input('labels'): batch_data['labels']}
         else:
-            return {self._user_id_serving: batch_data['user_id_input'],
-                   self._item_id_serving: batch_data['item_id_input']}
+            return {self._get_input('user_id', train=False): batch_data['user_id_input'],
+                   self._get_input('item_id', train=False): batch_data['item_id_input']}
 
     def _build_user_inputs(self, train=True):
         
         if train:
-            self._user_id_input = self._input(dtype='int32', shape=[self._batch_size], name='user_id_input')
+            self._add_input(name='user_id', dtype='int32', shape=[self._batch_size])
         else:
-            self._user_id_serving = self._input(dtype='int32', shape=[self._test_batch_size], name='user_id_serving')
+            self._add_input(name='user_id', dtype='int32', shape=[self._test_batch_size], train=False)
         
     def _build_item_inputs(self, train=True):
         
         if train:
-            self._item_id_input = self._input(dtype='int32', shape=[self._batch_size], name='item_id_input')
+            self._add_input(name='item_id', dtype='int32', shape=[self._batch_size])
         else:
-            self._item_id_serving = self._input(dtype='int32', shape=[self._test_batch_size], name='item_id_serving')
+            self._add_input(name='item_id', dtype='int32', shape=[self._test_batch_size], train=False)
     
     def _build_extra_inputs(self, train=True):
         
         if train:
-            self._labels = self._input(dtype='float32', shape=[self._batch_size], name='labels')
+            self._add_input(name='labels', dtype='float32', shape=[self._batch_size])
+        else:
+            self._add_input(name='labels', dtype='none', train=False)
 
     def _build_user_extractions(self, train=True):
 
-        if train:
-            self._user_vec = TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_user_embeddings, 
-                                                  ids=self._user_id_input, mlp_dims=self._user_dims,
-                                                  shape=[self._max_user, self._dim_embed], train=True,
-                                                  scope='user', reuse=False)
-            self._loss_nodes += [self._user_vec]
-        else:
-            self._user_vec_serving = TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_user_embeddings, 
-                                                          ids=self._user_id_serving, mlp_dims=self._user_dims,
-                                                          shape=[self._max_user, self._dim_embed], train=False,
-                                                          scope='user', reuse=True)
+        self._add_module('user_vec',
+                         TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_user_embeddings, 
+                                              ids=self._get_input('user_id', train=train), mlp_dims=self._user_dims,
+                                              shape=[self._max_user, self._dim_embed], train=train,
+                                              scope='user', reuse=not train),
+                         train=train)
 
     def _build_item_extractions(self, train=True):
         
-        if train:
-            self._item_vec = TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_item_embeddings, 
-                                                  ids=self._item_id_input, mlp_dims=self._item_dims,
-                                                  shape=[self._max_item, self._dim_embed], train=True,
-                                                  scope='item', reuse=False)
-            self._item_bias = LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._item_id_input,
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=False)
-            self._loss_nodes += [self._item_vec, self._item_bias]
-        else:
-            self._item_vec_serving = TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_item_embeddings, 
-                                                          ids=self._item_id_serving, mlp_dims=self._item_dims,
-                                                          shape=[self._max_item, self._dim_embed], train=False,
-                                                          scope='item', reuse=True)
-            self._item_bias_serving = LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._item_id_serving,
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=True)
+        self._add_module('item_vec',
+                          TemporalLatentFactor(l2_reg=self._l2_reg, init=self._pretrained_item_embeddings, 
+                                              ids=self._get_input('item_id', train=train), mlp_dims=self._item_dims,
+                                              shape=[self._max_item, self._dim_embed], train=train,
+                                              scope='item', reuse=not train),
+                          train=train)
+        self._add_module('item_bias',
+                          LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('item_id', train=train),
+                                      shape=[self._max_item, 1], scope='item_bias', reuse=not train),
+                          train=train)
 
     def _build_default_interactions(self, train=True):
 
-        if train:
-            self._interaction_train = PointwiseMSE(user=self._user_vec.get_outputs()[0], 
-                                        item=self._item_vec.get_outputs()[0],
-                                        item_bias=self._item_bias.get_outputs()[0], 
-                                        labels=self._labels, a=1.0, b=1.0, sigmoid=True,
-                                        train=True, scope='PointwiseMSE', reuse=False)
-            self._loss_nodes.append(self._interaction_train)
-        else:
-            self._interaction_serve = PointwiseMSE(user=self._user_vec_serving.get_outputs()[0], 
-                                        item=self._item_vec_serving.get_outputs()[0],
-                                        item_bias=self._item_bias_serving.get_outputs()[0], sigmoid=True, 
-                                        train=False, batch_serving=False, scope='PointwiseMSE', reuse=True)
+          self._add_module('interaction',
+                          PointwiseMSE(user=self._get_module('user_vec', train=train).get_outputs()[0], 
+                                      item=self._get_module('item_vec', train=train).get_outputs()[0],
+                                      item_bias=self._get_module('item_bias', train=train).get_outputs()[0], 
+                                      labels=self._get_input('labels', train=train), a=1.0, b=1.0, sigmoid=True,
+                                      train=train, scope='PointwiseMSE', reuse=not train),
+                          train=train)
 
     def _build_serving_graph(self):
 
         super(ItrMLP, self)._build_serving_graph()
-        self._scores = self._interaction_serve.get_outputs()[0]
+        self._scores = self._get_module('interaction', train=False).get_outputs()[0]

@@ -4,8 +4,8 @@ import tensorflow as tf
 class Module(object):
 
     """
-    The module is the OpenRec abstraction for modules. A module may belong to one of the three categories, **extractions**, **fusions**, and \
-    **interactions**, depending on its functionality (Read [1]_ for details).
+    The module is the OpenRec abstraction for modules. A module may belong to one of the three categories, \
+    **extractions**, **fusions**, and **interactions**, depending on its functionality (Read [1]_ for details).
 
     Parameters
     ----------
@@ -20,8 +20,9 @@ class Module(object):
 
     Notes
     -----
-    The module abstraction is used to construct recommenders. It should be extended by all module implementations. During initialization, functions :code:`self._build_shared_graph`, \
-    :code:`self._build_training_graph`, and :code:`self._build_serving_graph` are called as follows.
+    The module abstraction is used to construct recommenders. It should be extended by all module implementations. \
+    During initialization, functions :code:`self._build_shared_graph`, :code:`self._build_training_graph`, and \
+    :code:`self._build_serving_graph` are called as follows.
     
     .. image:: module.png
         :scale: 50 %
@@ -30,10 +31,11 @@ class Module(object):
 
     A module implementation should follow two steps below:
     
-    * **Build computational graphs.** Override :code:`self._build_shared_graph()`, :code:`self._build_training_graph()`, and/or :code:`self._build_serving_graph()` functions to build \
-    training/serving computational graphs.
+    * **Build computational graphs.** Override :code:`self._build_shared_graph()`, :code:`self._build_training_graph()`,\
+     and/or :code:`self._build_serving_graph()` functions to build training/serving computational graphs.
 
-    * **Define a loss and an output list.** Define a loss (:code:`self._loss`) to be included in training and an output list of Tensorflow tensors (:code:`self._outputs`).
+    * **Define a loss and an output list.** Define a loss (:code:`self._loss`) to be included in training and an output \
+    list of Tensorflow tensors (:code:`self._outputs`).
 
     References
     ----------

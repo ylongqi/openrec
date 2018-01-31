@@ -28,4 +28,4 @@ class Concat(Fusion):
 
             outputs = sum([cell.get_outputs() for cell in self._module_list], [])
             self._outputs.append(tf.concat(values=outputs, axis=1))
-            self._loss = 0
+            self._loss = 0.0

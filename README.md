@@ -41,3 +41,11 @@ Use `download_dataset.sh` script.
 ## License
 
 [Apache License 2.0](LICENSE)
+
+## Funders
+<div>
+  <img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/imgs/funderlogonew.png?raw=true" width="20%"><br><br>
+</div>
+
+
+

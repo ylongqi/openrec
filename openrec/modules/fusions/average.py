@@ -31,4 +31,4 @@ class Average(Fusion):
 
             outputs = sum([module.get_outputs() for module in self._module_list], [])
             self._outputs.append(self._weight * tf.add_n(outputs) /  len(self._module_list))
-            self._loss = 0
+            self._loss = 0.0

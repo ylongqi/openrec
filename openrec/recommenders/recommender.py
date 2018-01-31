@@ -33,8 +33,9 @@ class Recommender(object):
     -----
     .. highlight:: python
 
-    The recommender abstraction defines the procedures to build a recommendation computational graph and exposes interfaces for training 
-    and evaluation. During training, for each batch, the :code:`self.train` function should be called with a :code:`batch_data` input,
+    The recommender abstraction defines the procedures to build a recommendation computational graph and exposes 
+    interfaces for training and evaluation. During training, for each batch, the :code:`self.train` function should be 
+    called with a :code:`batch_data` input,
     
     .. code:: python
 
@@ -56,32 +57,40 @@ class Recommender(object):
         :alt: The structure of the recommender abstraction
         :align: center
 
-    A new recommender class should be inherent from the *Recommender* class. Follow the steps below to override corresponding functions. 
-    To make a recommender easily extensible, it is **NOT** recommended to override functions 
+    A new recommender class should be inherent from the *Recommender* class. Follow the steps below to override 
+    corresponding functions. To make a recommender easily extensible, it is **NOT** recommended to override functions 
     :code:`self._build_inputs`, :code:`self._build_fusions`, and :code:`self._build_interactions`. 
     
-        * **Define inputs.** Override functions :code:`self._build_user_inputs`, :code:`self._build_item_inputs`, and :code:`self._build_extra_inputs` to define inputs for users', \
-        items', and contextual data sources respectively. An input should be defined using the *input* function as follows.
+        * **Define inputs.** Override functions :code:`self._build_user_inputs`, :code:`self._build_item_inputs`, \
+        and :code:`self._build_extra_inputs` to define inputs for users', items', and contextual data sources \
+        respectively. An input should be defined using the *input* function as follows.
     
         .. code:: python
 
-            self._a_data_input = self._input(dtype='float32', shape=data_shape, name='input_name')
+            self._add_input(name='input_name', dtype='float32', shape=data_shape, train=True)
 
-        * **Define input mappings.** Override the function :code:`self._input_mappings` to feed a *batch_data* into the defined inputs. The mapping should be specified \
-        using a python dict where a *key* corresponds to an input object, e.g., :code:`self._a_data_input`, and a *value* corresponds to a :code:`batch_data` value.
+        * **Define input mappings.** Override the function :code:`self._input_mappings` to feed a *batch_data* into \
+        the defined inputs. The mapping should be specified using a python dict where a *key* corresponds to an input \
+        object retrieved by :code:`self._get_input(input_name, train=train)`, and a *value* corresponds to a \
+        :code:`batch_data` value.
 
-        * **Define extraction modules.** Override functions :code:`self._build_user_extractions`, :code:`self._build_item_extractions`, and :code:`self._build_extra_extractions` to define extraction \
-        modules for users, items, and extra contexts respectively.
+        * **Define extraction modules.** Override functions :code:`self._build_user_extractions`, \
+        :code:`self._build_item_extractions`, and :code:`self._build_extra_extractions` to define extraction \
+        modules for users, items, and extra contexts respectively. Use :code:`self._add_module` to construct a \
+        module, and :code:`self._get_input`/:code:`self._get_module` to retrieve an existing input/module.
 
-        * **Define fusion modules.** Override the function :code:`self._build_default_fusions` to build fusion modules. Custom functions can also be used as long as they are \
-        included in the input :code:`extra_fusions_funcs` list.
+        * **Define fusion modules.** Override the function :code:`self._build_default_fusions` to build fusion modules.\
+        Custom functions can also be used as long as they are included in the input :code:`extra_fusions_funcs` list. \
+        Use :code:`self._add_module` to construct a module, and :code:`self._get_input`/:code:`self._get_module` to \
+        retrieve an existing input/module.
 
-        * **Define interaction modules.** Override the fuction :code:`build_default_interactions` to build interaction modules. Custom functions can also be used as long as \
-        they are included in the input :code:`extra_interactions_funcs` list.
+        * **Define interaction modules.** Override the fuction :code:`build_default_interactions` to build interaction \
+        modules. Custom functions can also be used as long as they are included in the input \
+        :code:`extra_interactions_funcs` list. Use :code:`self._add_module` to construct a module, and \
+        :code:`self._get_input`/:code:`self._get_module` to retrieve an existing input/module.
 
-    While :code:`train==True`, all modules that produce training loss, including regularization, should be appended to the :code:`self._loss_nodes` list. 
-    Otherwise (:code:`train==False`), a variable named :code:`self._scores` should be defined for *user-item scores*. Such a score is higher if an item should be ranked higher \
-    in the recommendation list.
+    When (:code:`train==False`), a variable named :code:`self._scores` should be defined for *user-item scores*. \
+    Such a score is higher if an item should be ranked higher in the recommendation list.
 
     References
     ----------
@@ -110,6 +119,9 @@ class Recommender(object):
             self._lr = lr
 
         self._loss_nodes = []
+        self._inputs_store = {'train':{}, 'serving': {}}
+        self._modules_store = {'train':{}, 'serving': {}}
+        
         self._interactions_funcs = [self._build_default_interactions] + extra_interactions_funcs
         self._fusions_funcs = [self._build_default_fusions] + extra_fusions_funcs
 
@@ -123,22 +135,7 @@ class Recommender(object):
         self._initialize(init_dict)
         self._saver = tf.train.Saver(max_to_keep=None)
 
-    def _initialize(self, init_dict):
-
-        """Initialize model parameters (do NOT override).
-
-        Parameters
-        ----------
-        init_dict: dict
-            Key-value pairs for initial parameter values.
-
-        """
-
-        if init_dict is None:
-            self._sess.run(tf.global_variables_initializer())
-        else:
-            self._sess.run(tf.global_variables_initializer(), feed_dict=init_dict)
-
+    
     def train(self, batch_data):
 
         """Train the model with an input batch_data.
@@ -167,7 +164,59 @@ class Recommender(object):
                             feed_dict=self._input_mappings(batch_data, train=False))
 
         return scores
-    
+
+    def compute_module_outputs(self, name, batch_data, train=True):
+
+        """Compute the outputs of a module, specified by the name and the train flag.
+
+        Parameters
+        ----------
+        name: str
+            The module name.
+        batch_data: dict
+            A batch of training or serving data.
+        train: bool
+            Specify the computational graph (train/serving) to compute outputs.
+        
+        Returns
+        -------
+        A list of Numpy arrays
+            The outputs of the specified module.
+        """
+        
+        module = self._get_module(name=name, train=train)
+        
+        if len(module.get_outputs()) == 0:
+            return []
+        
+        return self._sess.run(module.get_outputs(), feed_dict=self._input_mappings(batch_data, train=train))
+
+    def compute_module_loss(self, name, batch_data, train=True):
+
+        """Compute the loss of a module, specified by the name and the train flag.
+
+        Parameters
+        ----------
+        name: str
+            The module name.
+        batch_data: dict
+            A batch of training or serving data.
+        train: bool
+            Specify the computational graph (train/serving) to compute loss.
+        
+        Returns
+        -------
+        Numpy array
+            The loss of the specified module.
+        """
+
+        module = self._get_module(name=name, train=train)
+        
+        if type(module.get_loss()) == float:
+            return module.get_loss()
+
+        return self._sess.run(module.get_loss(), feed_dict=self._input_mappings(batch_data, train=train))
+
     def save(self, save_dir, step):
 
         """Save a trained model to disk.
@@ -194,6 +243,118 @@ class Recommender(object):
 
         self._saver.restore(self._sess, load_dir)
     
+    def _add_module(self, name, module, train_loss=None, train=True):
+        
+        """Add a module - overwrite if :code:`name` exists.
+
+        Parameters
+        ----------
+        name: str
+            Module name.
+        module: Module
+            Module instance.
+        train_loss: bool, optional
+            Whether or not to include the output loss in the training loss (Default: include losses from all modules).
+        train: bool, optional
+            Specify the computational graph (train/serving) to add the module.
+        """
+        if train_loss is None:
+            train_loss = train
+            
+        if train:
+            self._modules_store['train'][name] = module
+        else:
+            self._modules_store['serving'][name] = module
+        
+        if train_loss:
+            self._loss_nodes.append(module)
+    
+    def _get_module(self, name, train=True):
+        
+        """Retrieve a module.
+
+        Parameters
+        ----------
+        name: str
+            The module name.
+        train: bool
+            Specify training or serving graph.
+
+        Returns
+        -------
+        Module
+            The module specified by the name and the :code:`train` flag.
+        """
+        if train:
+            return self._modules_store['train'][name]
+        else:
+            return self._modules_store['serving'][name]
+    
+    def _add_input(self, name, dtype='float32', shape=None, train=True):
+        
+        """Add an input - overwrite if :code:`name` exists.
+
+        Parameters
+        ----------
+        name: str
+            The input name.
+        dtype: str
+            Data type: "float16", "float32" (default), "float64", "int8", "int16", "int32", "int64", "bool", "string" \
+            or "none".
+        shape: list or tuple
+            Input shape.
+        train: bool
+            Specify training or serving graph.
+        """
+        
+        if train:
+            if dtype=='none':
+                self._inputs_store['train'][name] = None
+            else:
+                self._inputs_store['train'][name] = self._input(dtype=dtype, shape=shape, name=name+'_train')
+        else:
+            if dtype=='none':
+                self._inputs_store['serving'][name] = None
+            else:
+                self._inputs_store['serving'][name] = self._input(dtype=dtype, shape=shape, name=name+'_serving')
+    
+    def _get_input(self, name, train=True):
+        
+        """Retrieve an input.
+
+        Parameters
+        ----------
+        name: str
+            Input name.
+        train: bool
+            Specify training or serving graph.
+
+        Returns
+        -------
+        Tensorflow placeholder
+            The input specified by the name and the :code:`train` flag.
+        """
+        if train:
+            return self._inputs_store['train'][name]
+        else:
+            return self._inputs_store['serving'][name]
+        
+    def _initialize(self, init_dict):
+
+        """Initialize model parameters (do NOT override).
+
+        Parameters
+        ----------
+        init_dict: dict
+            Key-value pairs for initial parameter values.
+
+        """
+        if init_dict is None:
+            self._sess.run(tf.global_variables_initializer())
+        else:
+            self._sess.run(tf.global_variables_initializer(), feed_dict=init_dict)
+
+    
     def _input(self, dtype='float32', shape=None, name=None):
         
         """Define an input for the recommender.
@@ -206,6 +367,11 @@ class Recommender(object):
             Input shape.
         name: str
             Name of the input.
+
+        Returns
+        -------
+        Tensorflow placeholder
+            Defined tensorflow placeholder.
         """
         
         exec("tf_dtype = tf.%s" % dtype)
@@ -225,8 +391,8 @@ class Recommender(object):
         Returns
         -------
         dict
-            The mapping where a *key* corresponds to an input object, and a *value* corresponds to a :code:`batch_data` value.
-
+            The mapping where a *key* corresponds to an input object, and a *value* corresponds to a \
+            :code:`batch_data` value.
         """
 
         return {}

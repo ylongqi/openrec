@@ -17,7 +17,7 @@ class CDL(PMF):
         self._l2_reconst = l2_reconst
 
         super(CDL, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item, dim_embed=dim_embed,
-                                l2_reg=l2_reg, self.test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
+                                l2_reg=l2_reg, test_batch_size=test_batch_size, opt=opt, sess_config=sess_config)
 
     def _build_item_inputs(self, train=True):
 

@@ -65,9 +65,16 @@ class MultiLayerFC(Extraction):
         self._relu_in = relu_in
         self._relu_mid = relu_mid
         self._relu_out = relu_out
-        self._dropout_in = dropout_in
-        self._dropout_mid = dropout_mid
-        self._dropout_out = dropout_out
+
+        if train:
+            self._dropout_in = dropout_in
+            self._dropout_mid = dropout_mid
+            self._dropout_out = dropout_out
+        else:
+            self._dropout_in = None
+            self._dropout_mid = None
+            self._dropout_out = None
+        
         self._batch_norm = batch_norm
         self._bias_in = bias_in
         self._bias_mid = bias_mid

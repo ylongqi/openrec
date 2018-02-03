@@ -35,7 +35,7 @@ class UserVisualPMF(VisualPMF):
         super(UserVisualPMF, self)._build_user_extractions(train)
         
         self._add_module('user_f',
-                        MultiLayerFC(in_tensor=self._get_input('user_feature', train=train), 
+                        MultiLayerFC(in_tensor=self._get_input('user_feature', train=train), train=train,
                                      dims=self._dims_user, l2_reg=self._l2_reg_mlp, dropout_mid=self._dropout_rate, 
                                      scope='user_MLP', reuse=not train),
                         train=train)

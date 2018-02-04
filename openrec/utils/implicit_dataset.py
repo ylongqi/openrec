@@ -53,8 +53,8 @@ class ImplicitDataset(Dataset):
                 self._gb_item_user[entry['item_id']][entry['user_id']] = []
             self._gb_item_user[entry['item_id']][entry['user_id']].append(entry)
 
-        self._users = np.array(self._gb_user_item.keys())
-        self._items = np.array(self._gb_item_user.keys())
+        self._users = np.array(list(self._gb_user_item.keys()))
+        self._items = np.array(list(self._gb_item_user.keys()))
         self._num_user = len(self._users)
         self._num_item = len(self._items)
 

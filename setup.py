@@ -5,6 +5,8 @@ setup(
     name='openrec',
     version='0.1.0-beta',
     packages=find_packages(),
+    description="An open-source and modular library for neural network-inspired recommendation algorithms",
+    url="http://openrec.ai",
     license='Apache 2.0',
     author='Longqi Yang',
     author_email='ylongqi@cs.cornell.edu',

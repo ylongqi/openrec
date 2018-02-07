@@ -45,14 +45,14 @@ class VisualBPR(BPR):
         super(VisualBPR, self)._build_item_extractions(train)
         if train:
             self._add_module('p_item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('p_item_vfeature'), dropout_mid=self._dropout_rate, 
+                            MultiLayerFC(in_tensor=self._get_input('p_item_vfeature'), dropout_mid=self._dropout_rate, train=True,
                                         l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=False))
             self._add_module('n_item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('n_item_vfeature'), dropout_mid=self._dropout_rate, 
+                            MultiLayerFC(in_tensor=self._get_input('n_item_vfeature'), dropout_mid=self._dropout_rate, train=True,
                                         l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=True))
         else:
             self._add_module('item_vf',
-                            MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=False), 
+                            MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=False), train=False,
                                         l2_reg=self._l2_reg_mlp, dims=self._dims, scope='item_visual_embed', reuse=True),
                             train=False)
 

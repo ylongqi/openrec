@@ -17,9 +17,9 @@ class ImplicitEvalManager(object):
         rank_above = np.zeros(len(pos_samples))
 
         pos_samples_len = len(pos_samples)
-        for ind in xrange(len(predictions)):
+        for ind in range(len(predictions)):
             if ind not in excl_pos_samples_set:
-                for pos_ind in xrange(pos_samples_len):
+                for pos_ind in range(pos_samples_len):
                     if pos_predictions[pos_ind] < predictions[ind]:
                         rank_above[pos_ind] += 1
 
@@ -32,7 +32,7 @@ class ImplicitEvalManager(object):
         pos_scores_len = len(pos_scores)
 
         for score in neg_scores:
-            for pos_ind in xrange(pos_scores_len):
+            for pos_ind in range(pos_scores_len):
                 if pos_scores[pos_ind] < score:
                     rank_above[pos_ind] += 1
 

@@ -102,7 +102,19 @@ class Recommender(object):
     def __init__(self, batch_size, max_user, max_item, extra_interactions_funcs=[],
                     extra_fusions_funcs=[], test_batch_size=None, l2_reg=None, opt='SGD', lr=None, 
                     init_dict=None, sess_config=None):
-
+        
+        self._str_to_dtype = {
+            'float16': tf.float16,
+            'float32': tf.float32,
+            'float64': tf.float64,
+            'int8': tf.int8,
+            'int16': tf.int16,
+            'int32': tf.int32,
+            'int64': tf.int64,
+            'bool': tf.bool,
+            'string': tf.string
+        }
+        
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
         self._max_user = max_user
@@ -373,9 +385,10 @@ class Recommender(object):
         Tensorflow placeholder
             Defined tensorflow placeholder.
         """
-        
-        exec("tf_dtype = tf.%s" % dtype)
-        return tf.placeholder(tf_dtype, shape=shape, name=name)
+        if dtype not in self._str_to_dtype:
+            raise ValueError
+        else:
+            return tf.placeholder(self._str_to_dtype[dtype], shape=shape, name=name)
 
     def _input_mappings(self, batch_data, train):
         

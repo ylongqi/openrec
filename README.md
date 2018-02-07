@@ -13,7 +13,28 @@
 
 ## Installation
 
-`pip install openrec` (coming soon)
+Before installing OpenRec, please install [TensorFlow backend](https://www.tensorflow.org/install/) (GPU version is recommended). 
+
+- **Install OpenRec from PyPI (recommended):**
+
+```sh
+pip install openrec
+```
+
+- **Install OpenRec from source code:**
+
+First, clone OpenRec using `git`:
+
+```sh
+git clone https://github.com/ylongqi/openrec
+```
+
+Then, `cd` to the OpenRec folder and run the install command:
+
+```sh
+cd openrec
+python setup.py install
+```
 
 ## Dataset download
 

@@ -6,12 +6,16 @@ from openrec.utils.samplers import Sampler
 
 class _PairwiseSampler(Process):
 
-    def __init__(self, dataset, batch_size, q):
+    def __init__(self, dataset, batch_size, q, chronological):
         self._dataset = dataset
-        self._dataset.shuffle()
         self._batch_size = batch_size
         self._q = q
         self._state = 0
+        self._chronological = chronological
+
+        if not chronological:
+            self._dataset.shuffle()
+
         super(_PairwiseSampler, self).__init__()
 
     def run(self):
@@ -22,8 +26,11 @@ class _PairwiseSampler(Process):
                                                         ('n_item_id_input', np.int32)])
 
             if self._state + self._batch_size >= len(self._dataset.data):
-                self._state = 0
-                self._dataset.shuffle()
+                if not self._chronological:
+                    self._state = 0
+                    self._dataset.shuffle()
+                else:
+                    break
 
             for sample_itr, entry in enumerate(self._dataset.data[self._state:(self._state + self._batch_size)]):
                 neg_id = int(random.random() * (self._dataset.max_item() - 1))
@@ -49,4 +56,4 @@ class PairwiseSampler(Sampler):
         
         return _PairwiseSampler(dataset=self._dataset,
                                batch_size=self._batch_size,
-                               q=self._q)
+                               q=self._q, chronological=self._chronological)

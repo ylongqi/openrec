@@ -20,8 +20,8 @@ train_dataset = ImplicitDataset(raw_data['train_data'], raw_data['max_user'], ra
 val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
 test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
-model = VisualGMF(batch_size=batch_size, max_user=raw_data['max_user'], max_item=raw_data['max_item'], 
-                dim_embed=50, item_f_source=raw_data['item_features'], dims=[1028, 128, 50], sess_config=sess_config, opt='Adam')
+model = VisualGMF(batch_size=batch_size, max_user=raw_data['max_user'], max_item=raw_data['max_item'], l2_reg=0.001, l2_reg_mlp=0.001, 
+    dropout_rate=0.5, dim_embed=50, item_f_source=raw_data['item_features'], dims=[1028, 128, 50], sess_config=sess_config, opt='Adam')
 sampler = PointwiseSampler(batch_size=batch_size, dataset=train_dataset, pos_ratio=0.2, num_process=1)
 model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, item_serving_size=item_serving_size,
     train_dataset=train_dataset, model=model, sampler=sampler)

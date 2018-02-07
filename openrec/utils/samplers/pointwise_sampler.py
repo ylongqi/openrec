@@ -5,7 +5,7 @@ from openrec.utils.samplers import Sampler
 
 class _PointwiseSampler(Process):
 
-    def __init__(self, dataset, batch_size, pos_ratio, q):
+    def __init__(self, dataset, batch_size, pos_ratio, q, chronological=False):
         
         self._dataset = dataset
         self._batch_size = batch_size
@@ -14,6 +14,10 @@ class _PointwiseSampler(Process):
         self._user_list = self._dataset.get_unique_user_list()
         self._q = q
         self._state = 0
+        self._chronological = chronological
+
+        if not chronological:
+            self._dataset.shuffle()
         super(_PointwiseSampler, self).__init__()
 
 
@@ -25,8 +29,11 @@ class _PointwiseSampler(Process):
                                                         ('labels', np.float32)])
 
             if self._state + self._num_pos >= len(self._dataset.data):
-                self._state = 0
-                self._dataset.shuffle()
+                if not self._chronological:
+                    self._state = 0
+                    self._dataset.shuffle()
+                else:
+                    break
 
             for ind in range(self._num_pos):
                 entry = self._dataset.data[self._state + ind]
@@ -62,4 +69,4 @@ class PointwiseSampler(Sampler):
         return _PointwiseSampler(dataset=self._dataset,
                                pos_ratio=self._pos_ratio,
                                batch_size=self._batch_size,
-                               q=self._q)
+                               q=self._q, chronological=self._chronological)

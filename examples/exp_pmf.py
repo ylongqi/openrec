@@ -20,7 +20,7 @@ val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_da
 test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
 model = PMF(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
-                dim_embed=20, opt='Adam', sess_config=sess_config)
+                dim_embed=50, opt='Adam', sess_config=sess_config)
 sampler = PointwiseSampler(batch_size=batch_size, dataset=train_dataset, pos_ratio=0.2, num_process=1)
 model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
     train_dataset=train_dataset, model=model, sampler=sampler)

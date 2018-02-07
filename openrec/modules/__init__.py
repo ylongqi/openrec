@@ -1,1 +1,1 @@
-from module import Module
+from openrec.modules.module import Module

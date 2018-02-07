@@ -41,7 +41,8 @@ class VisualPMF(PMF):
         super(VisualPMF, self)._build_item_extractions(train)
         self._add_module('item_vf',
                          MultiLayerFC(in_tensor=self._get_input('item_vfeature', train=train), dims=self._dims, 
-                                      l2_reg=self._l2_reg_mlp, dropout_mid=self._dropout_rate, scope='item_MLP', reuse=not train),
+                                      l2_reg=self._l2_reg_mlp, dropout_mid=self._dropout_rate, scope='item_MLP', reuse=not train,
+                                      train=train),
                          train=train)
 
     def _build_default_fusions(self, train=True):

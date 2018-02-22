@@ -38,6 +38,7 @@ class Dataset(object):
         else:
             raise TypeError("Unsupported data input schema. Please use structured numpy array.")
         
+        self.data = None
         self._max_user = max_user
         self._max_item = max_item
     

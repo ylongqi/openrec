@@ -129,7 +129,7 @@ class ImplicitModelTrainer(object):
             scores = self._score_full_items(users=users)
             for u_ind, user in enumerate(users):
                 result = self._eval_manager.full_eval(
-                                    pos_samples=list(eval_dataset.get_interactions_by_user_gb_item(user).keys()),
+                                    pos_samples=eval_dataset.get_interactions_by_user_gb_item(user),
                                     excl_pos_samples=self._excluded_positives[user],
                                     predictions=scores[u_ind])
                 for key in result:
@@ -144,7 +144,7 @@ class ImplicitModelTrainer(object):
             metric_results[evaluator.name] = []
 
         for user in tqdm(eval_dataset.get_unique_user_list()):
-            items = self._sampled_negatives[user] + list(eval_dataset.get_interactions_by_user_gb_item(user).keys())
+            items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user)
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])
             for key in result:
@@ -163,10 +163,10 @@ class ImplicitModelTrainer(object):
             self._excluded_positives[user] = set()
         for user in user_set:
             if self._train_dataset.contain_user(user):
-                self._excluded_positives[user] = self._excluded_positives[user].union(list(self._train_dataset.get_interactions_by_user_gb_item(user).keys()))
+                self._excluded_positives[user] = self._excluded_positives[user].union(self._train_dataset.get_interactions_by_user_gb_item(user))
             for dataset in eval_datasets:
                 if dataset.contain_user(user):
-                    self._excluded_positives[user] = self._excluded_positives[user].union(list(dataset.get_interactions_by_user_gb_item(user).keys()))
+                    self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user))
 
 
     def _sample_negatives(self):

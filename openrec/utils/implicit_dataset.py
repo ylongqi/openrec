@@ -38,25 +38,19 @@ class ImplicitDataset(Dataset):
                                               max_item=max_item, name=name)
 
         self._gb_user_item = dict()
-        for ind, entry in enumerate(self.raw_data):
+        for entry in self.raw_data:
             if entry['user_id'] not in self._gb_user_item:
-                self._gb_user_item[entry['user_id']] = dict()
-            if entry['item_id'] not in self._gb_user_item[entry['user_id']]:
-                self._gb_user_item[entry['user_id']][entry['item_id']] = []
-            self._gb_user_item[entry['user_id']][entry['item_id']].append(ind)
-
+                self._gb_user_item[entry['user_id']] = list()
+            self._gb_user_item[entry['user_id']].append(entry['item_id'])
+        
         self._gb_item_user = dict()
-        for ind, entry in enumerate(self.raw_data):
+        for entry in self.raw_data:
             if entry['item_id'] not in self._gb_item_user:
-                self._gb_item_user[entry['item_id']] = dict()
-            if entry['user_id'] not in self._gb_item_user[entry['item_id']]:
-                self._gb_item_user[entry['item_id']][entry['user_id']] = []
-            self._gb_item_user[entry['item_id']][entry['user_id']].append(ind)
-
-        self._users = np.array(list(self._gb_user_item.keys()))
-        self._items = np.array(list(self._gb_item_user.keys()))
-        self._num_user = len(self._users)
-        self._num_item = len(self._items)
+                self._gb_item_user[entry['item_id']] = list()
+            self._gb_item_user[entry['item_id']].append(entry['user_id'])
+        
+        self._num_user = len(self._gb_user_item)
+        self._num_item = len(self._gb_item_user)
 
     def contain_user(self, user_id):
         """Check whether or not an user is involved in any interaction.
@@ -98,8 +92,8 @@ class ImplicitDataset(Dataset):
 
         Returns
         -------
-        dict
-            Interactions grouped by item ids.
+        list
+            Items that have interacted with given user.
         """
         return self._gb_user_item[user_id]
 
@@ -113,8 +107,8 @@ class ImplicitDataset(Dataset):
 
         Returns
         -------
-        dict
-            Interactions grouped by user ids.
+        list
+            Users that have interacted with given item.
         """
         return self._gb_item_user[item_id]
 
@@ -126,7 +120,7 @@ class ImplicitDataset(Dataset):
         numpy array
             A list of unique user ids.
         """
-        return self._users
+        return np.array(self._gb_user_item.keys())
 
     def get_unique_item_list(self):
         """Retrieve a list of unique item ids.
@@ -136,7 +130,7 @@ class ImplicitDataset(Dataset):
         numpy array
             A list of unique item ids.
         """
-        return self._items
+        return np.array(self._gb_item_user.keys())
 
     def unique_user_count(self):
         """Number of unique users.

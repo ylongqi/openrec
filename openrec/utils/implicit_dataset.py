@@ -38,20 +38,20 @@ class ImplicitDataset(Dataset):
                                               max_item=max_item, name=name)
 
         self._gb_user_item = dict()
-        for ind, entry in enumerate(self.data):
+        for ind, entry in enumerate(self.raw_data):
             if entry['user_id'] not in self._gb_user_item:
                 self._gb_user_item[entry['user_id']] = dict()
             if entry['item_id'] not in self._gb_user_item[entry['user_id']]:
                 self._gb_user_item[entry['user_id']][entry['item_id']] = []
-            self._gb_user_item[entry['user_id']][entry['item_id']].append(entry)
+            self._gb_user_item[entry['user_id']][entry['item_id']].append(ind)
 
         self._gb_item_user = dict()
-        for ind, entry in enumerate(self.data):
+        for ind, entry in enumerate(self.raw_data):
             if entry['item_id'] not in self._gb_item_user:
                 self._gb_item_user[entry['item_id']] = dict()
             if entry['user_id'] not in self._gb_item_user[entry['item_id']]:
                 self._gb_item_user[entry['item_id']][entry['user_id']] = []
-            self._gb_item_user[entry['item_id']][entry['user_id']].append(entry)
+            self._gb_item_user[entry['item_id']][entry['user_id']].append(ind)
 
         self._users = np.array(list(self._gb_user_item.keys()))
         self._items = np.array(list(self._gb_item_user.keys()))

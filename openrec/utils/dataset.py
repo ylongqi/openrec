@@ -34,7 +34,7 @@ class Dataset(object):
         
         self.name = name
         if type(raw_data) == np.ndarray:
-            self.data = raw_data
+            self.raw_data = raw_data
         else:
             raise TypeError("Unsupported data input schema. Please use structured numpy array.")
         
@@ -64,4 +64,7 @@ class Dataset(object):
     def shuffle(self):
         """Shuffle the dataset entries.
         """
+        if self.data is None:
+            self.data = self.raw_data.copy()
+            
         np.random.shuffle(self.data)

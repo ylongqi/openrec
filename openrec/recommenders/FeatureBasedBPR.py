@@ -4,9 +4,9 @@ from openrec.modules.fusions import Average
 
 class FeatureBasedBPR(BPR):
 
-    def __init__(self, batch_size, max_user, max_item, dim_embed,
-            test_batch_size=None, item_serving_size=None,
+    def __init__(self, batch_size, max_user, max_item, dim_embed, test_batch_size=None, item_serving_size=None,
             opt='Adam', sess_config=None):
+
 
         super(FeatureBasedBPR, self).__init__(batch_size=batch_size, max_user=max_user, max_item=max_item,
                                     test_batch_size=test_batch_size, dim_embed=dim_embed, sess_config=sess_config)
@@ -38,9 +38,9 @@ class FeatureBasedBPR(BPR):
         if train:
             
             self._p_song_genre = LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._p_item_genre_input,
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=False)
+                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=True)
             self._n_song_genre = LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._n_item_genre_input,
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=False)
+                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=True)
         else:
             self._item_vec_serving = LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._item_id_serving,
                                     shape=[self._max_item, self._dim_embed], scope='item', reuse=True)

@@ -18,7 +18,7 @@ batch_size = 1000
 test_batch_size = 100
 display_itr = 10000
 
-print 'fuck'
+print 'yuck'
 train_dataset = ImplicitDataset(raw_data['train_data'], raw_data['max_user'], raw_data['max_item'], name='Train')
 print 'h'
 val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_data['max_item'], name='Val')
@@ -26,8 +26,11 @@ print 'e'
 test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 print 'here 1'
 
-bpr_model = FeatureBasedBPR(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
-                dim_embed=20, opt='Adam', sess_config=sess_config)
+bpr_model = FeatureBasedBPR(batch_size=batch_size, max_user=raw_data['max_user'], max_item=raw_data['max_item'], 
+                dim_embed=20, sess_config=sess_config, opt='Adam')
+
+# bpr_model = FeatureBasedBPR(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
+#                 dim_embed=20, opt='Adam', sess_config=sess_config)
 
 print 'here 2'
 sampler = GeneralSampler(batch_size=batch_size, dataset=train_dataset, num_process=1, genre_f = raw_data['song_to_genre'])

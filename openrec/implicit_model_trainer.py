@@ -5,6 +5,7 @@ from termcolor import colored
 import numpy as np
 from openrec.utils.evaluators import ImplicitEvalManager
 import sys
+import json
 
 class ImplicitModelTrainer(object):
 
@@ -33,11 +34,12 @@ class ImplicitModelTrainer(object):
     The function :code:`train` should be called for model training and evaluation.
     """
 
-    def __init__(self, batch_size, test_batch_size, train_dataset, model, sampler, item_serving_size=None):
+    def __init__(self, batch_size, test_batch_size, train_dataset, model, sampler, item_serving_size=None, eval_save_prefix=None):
 
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
         self._item_serving_size = item_serving_size
+        self._eval_save_prefix = eval_save_prefix
 
         self._train_dataset = train_dataset
         self._max_item = self._train_dataset.max_item()
@@ -143,12 +145,26 @@ class ImplicitModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
 
+        to_be_saved = dict()
+        to_be_saved["users"] = list()
         for user in tqdm(eval_dataset.get_unique_user_list()):
+            to_be_saved["users"].append(int(user))
             items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user)
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])
             for key in result:
                 metric_results[key].append(result[key])
+
+        if self._eval_save_prefix:
+            for evaluator in self._eval_manager.evaluators:
+                to_be_saved[evaluator.name] = list(metric_results[evaluator.name])
+                if len(to_be_saved[evaluator.name]) > 0 and type(to_be_saved[evaluator.name][0]) != np.float64:
+                    to_be_saved[evaluator.name] = [list(a) for a in to_be_saved[evaluator.name]]
+                else:
+                    to_be_saved[evaluator.name] = [float(a) for a in to_be_saved[evaluator.name]]
+            tmpf = open(self._eval_save_prefix + "_evaluate_partial.json", 'w')
+            tmpf.write(json.dumps(to_be_saved))
+            tmpf.close()
 
         return metric_results
 

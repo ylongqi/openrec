@@ -120,7 +120,7 @@ class ImplicitDataset(Dataset):
         numpy array
             A list of unique user ids.
         """
-        return np.array(self._gb_user_item.keys())
+        return np.array(list(self._gb_user_item.keys()))
 
     def get_unique_item_list(self):
         """Retrieve a list of unique item ids.
@@ -130,7 +130,7 @@ class ImplicitDataset(Dataset):
         numpy array
             A list of unique item ids.
         """
-        return np.array(self._gb_item_user.keys())
+        return np.array(list(self._gb_item_user.keys()))
 
     def unique_user_count(self):
         """Number of unique users.

@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
-from openrec.modules.interactions import PairwiseLog #PairwiseEuDist
+from openrec.modules.interactions import NSEuDist
 
 class NCML(Recommender):
 
@@ -66,11 +66,11 @@ class NCML(Recommender):
                          train=True)
             t = self._get_input('n_item_id', train=train)
             self._add_module('n_item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=tf.reshape(tf.slice(t, [0, 0], [-1, 1]), [-1]),
+                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=t,
                                     shape=[self._max_item, self._dim_embed], scope='item', reuse=True), 
                          train=True)
             self._add_module('n_item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=tf.reshape(tf.slice(t, [0, 0], [-1, 1]), [-1]),
+                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=t,
                                     shape=[self._max_item, 1], scope='item_bias', reuse=True), 
                          train=True)
         else:
@@ -87,7 +87,7 @@ class NCML(Recommender):
 
         if train:
             self._add_module('interaction',
-                            PairwiseLog(user=self._get_module('user_vec').get_outputs()[0], 
+                            NSEuDist(user=self._get_module('user_vec').get_outputs()[0], 
                                     p_item=self._get_module('p_item_vec').get_outputs()[0],
                                     n_item=self._get_module('n_item_vec').get_outputs()[0], 
                                     p_item_bias=self._get_module('p_item_bias').get_outputs()[0],
@@ -96,7 +96,7 @@ class NCML(Recommender):
                             train=True)
         else:
             self._add_module('interaction',
-                            PairwiseLog(user=self._get_module('user_vec', train=train).get_outputs()[0],
+                            NSEuDist(user=self._get_module('user_vec', train=train).get_outputs()[0],
                                         item=self._get_module('item_vec', train=train).get_outputs()[0], 
                                         item_bias=self._get_module('item_bias', train=train).get_outputs()[0],
                                         scope='pairwise_log', reuse=True, train=False),

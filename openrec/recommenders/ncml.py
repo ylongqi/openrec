@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import NSEuDist
@@ -64,13 +63,12 @@ class NCML(Recommender):
                          LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('p_item_id', train=train),
                                     shape=[self._max_item, 1], scope='item_bias', reuse=False), 
                          train=True)
-            t = self._get_input('n_item_id', train=train)
             self._add_module('n_item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=t,
+                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('n_item_id', train=train),
                                     shape=[self._max_item, self._dim_embed], scope='item', reuse=True), 
                          train=True)
             self._add_module('n_item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=t,
+                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('n_item_id', train=train),
                                     shape=[self._max_item, 1], scope='item_bias', reuse=True), 
                          train=True)
         else:

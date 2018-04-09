@@ -47,7 +47,7 @@ class ImplicitModelTrainer(object):
         self._model = model
         self._sampler = sampler
 
-    def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None):
+    def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None, seed=10):
         """Train and evaluate a recommender.
 
         Parameters
@@ -73,7 +73,7 @@ class ImplicitModelTrainer(object):
             print(colored('== Start training with FULL evaluation ==', 'blue'))
         else:
             eval_func = self._evaluate_partial
-            self._sample_negatives()
+            self._sample_negatives(seed=seed)
             print(colored('== Start training with sampled evaluation, sample size: %d ==' % num_negatives, 'blue'))
 
         for itr in range(num_itr):
@@ -185,9 +185,10 @@ class ImplicitModelTrainer(object):
                     self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user))
 
 
-    def _sample_negatives(self):
+    def _sample_negatives(self, seed):
 
         print(colored('[Subsampling negative items]', 'red'))
+        numpy.random.seed(seed=seed)
         self._sampled_negatives = {}
         for user in tqdm(self._excluded_positives, leave=False):
             shuffled_items = np.random.permutation(self._max_item)

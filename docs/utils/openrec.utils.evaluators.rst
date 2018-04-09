@@ -46,3 +46,19 @@ MSE
     :members:
     :undoc-members:
     :private-members:
+
+NDCG
+-----
+
+.. autoclass:: NDCG
+    :members:
+    :undoc-members:
+    :private-members:
+
+Precision
+----------
+
+.. autoclass:: Precision
+    :members:
+    :undoc-members:
+    :private-members:

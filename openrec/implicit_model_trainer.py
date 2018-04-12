@@ -188,7 +188,7 @@ class ImplicitModelTrainer(object):
     def _sample_negatives(self, seed):
 
         print(colored('[Subsampling negative items]', 'red'))
-        numpy.random.seed(seed=seed)
+        np.random.seed(seed=seed)
         self._sampled_negatives = {}
         for user in tqdm(self._excluded_positives, leave=False):
             shuffled_items = np.random.permutation(self._max_item)

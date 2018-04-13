@@ -20,10 +20,10 @@ test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_
 
 ncml_model = NCML(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
     dim_embed=20, neg_num=5, l2_reg=None, opt='Adam', sess_config=None)
-sampler = NPairwiseSampler(batch_size=batch_size, dataset=train_dataset, negativenum=5, num_process=1)
+sampler = NPairwiseSampler(batch_size=batch_size, dataset=train_dataset, negativenum=5, num_process=5)
 model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size,
                                      train_dataset=train_dataset, model=ncml_model, sampler=sampler)
 auc_evaluator = AUC()
 
-model_trainer.train(num_itr=int(1e6), display_itr=display_itr, eval_datasets=[val_dataset],
+model_trainer.train(num_itr=int(1e5), display_itr=display_itr, eval_datasets=[val_dataset],
                     evaluators=[auc_evaluator], num_negatives=200)

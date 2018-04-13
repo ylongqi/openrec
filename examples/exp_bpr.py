@@ -7,7 +7,7 @@ from openrec.utils import ImplicitDataset
 from openrec.recommenders import BPR
 from openrec.utils.evaluators import AUC
 from openrec.utils.samplers import PairwiseSampler
-from config import sess_config
+#from config import sess_config
 import dataloader
 
 raw_data = dataloader.load_citeulike()
@@ -20,11 +20,11 @@ val_dataset = ImplicitDataset(raw_data['val_data'], raw_data['max_user'], raw_da
 test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_data['max_item'], name='Test')
 
 bpr_model = BPR(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
-                dim_embed=20, opt='Adam', sess_config=sess_config)
-sampler = PairwiseSampler(batch_size=batch_size, dataset=train_dataset, num_process=1)
+                dim_embed=20, opt='Adam')
+sampler = PairwiseSampler(batch_size=batch_size, dataset=train_dataset, num_process=5)
 model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
     train_dataset=train_dataset, model=bpr_model, sampler=sampler)
 auc_evaluator = AUC()
 
-model_trainer.train(num_itr=int(1e6), display_itr=display_itr, eval_datasets=[val_dataset, test_dataset],
+model_trainer.train(num_itr=int(1e5), display_itr=display_itr, eval_datasets=[val_dataset, test_dataset],
                     evaluators=[auc_evaluator])

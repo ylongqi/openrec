@@ -81,6 +81,8 @@ class ImplicitModelTrainer(object):
             loss = self._model.train(batch_data)
             acc_loss += loss
 
+            if itr % (display_itr // 10) == 0 and itr > 0:
+                print(colored('[Itr %d] Finished' % itr, 'blue'))
             if itr % display_itr == 0 and itr > 0:
                 print(colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr))
                 for dataset in eval_datasets:

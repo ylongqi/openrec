@@ -48,13 +48,13 @@ class _NPairwiseSampler(Process):
 
 class NPairwiseSampler(Sampler):
 
-    def __init__(self, dataset, batch_size, chronological=False, negativenum=10, num_process=5):
+    def __init__(self, dataset, batch_size, chronological=False, negativenum=10, num_process=5, seed=0):
         
         self._chronological = chronological
         self._negativenum = negativenum
         if chronological:
             num_process = 1
-        
+        random.seed(seed)
         super(NPairwiseSampler, self).__init__(dataset=dataset, batch_size=batch_size, num_process=num_process)
 
     def _get_runner(self):

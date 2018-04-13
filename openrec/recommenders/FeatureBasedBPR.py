@@ -15,8 +15,13 @@ class FeatureBasedBPR(BPR):
         
         super(FeatureBasedBPR, self)._build_item_inputs(train)
         if train:
-            self._p_item_genre_input = self._input(dtype='int32', shape=[self._batch_size], name='p_item_genre_input')
-            self._n_item_genre_input = self._input(dtype='int32', shape=[self._batch_size], name='n_item_genre_input')
+            self._song_id = self._input(dtype='int32', shape=[self._batch_size], name='song_id')
+            self._artist = self._input(dtype='int32', shape=[self._batch_size], name='artist')
+            self._genre = self._input(dtype='int32', shape=[self._batch_size], name='genre')
+            self._language = self._input(dtype='int32', shape=[self._batch_size], name='language')
+            self._lyricist = self._input(dtype='int32', shape=[self._batch_size], name='lyricist')
+            self._composer = self._input(dtype='int32', shape=[self._batch_size], name='composer')
+            self._source_type = self._input(dtype='int32', shape=[self._batch_size], name='source_type')
         else:
             self._item_id_serving = None
 
@@ -24,8 +29,13 @@ class FeatureBasedBPR(BPR):
 
         default_input_map = super(FeatureBasedBPR, self)._input_mappings(batch_data=batch_data, train=train)
         if train:
-            default_input_map[self._p_item_genre_input] = self._item_f_source[batch_data['p_item_genre_input']]
-            default_input_map[self._n_item_genre_input] = self._item_f_source[batch_data['n_item_genre_input']]
+            default_input_map[self._song_id] = self._item_f_source[batch_data['song_id']]
+            default_input_map[self._artist] = self._item_f_source[batch_data['artist']]
+            default_input_map[self._genre] = self._item_f_source[batch_data['genre']]
+            default_input_map[self._language] = self._item_f_source[batch_data['language']]
+            default_input_map[self._lyricist] = self._item_f_source[batch_data['lyricist']]
+            default_input_map[self._composer] = self._item_f_source[batch_data['composer']]
+            default_input_map[self._source_type] = self._item_f_source[batch_data['source_type']]
         else:
             default_input_map[self._item_id_serving] = batch_data['item_id_input']
             default_input_map[self._item_vfeature_serving] = self._item_f_source[batch_data['item_id_input']]

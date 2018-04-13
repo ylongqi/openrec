@@ -18,24 +18,20 @@ class _GeneralSampler(Process):
     def run(self):
         while True:
             
-            input_npy = np.zeros(self._batch_size, dtype=[('user_id_input', np.int32),
-                                                        ('p_item_id_input', np.int32),
-                                                        ('p_item_genre_input', np.int32),
-                                                        ('n_item_id_input', np.int32),
-                                                        ('n_item_genre_input', np.int32),])
+            input_npy = np.zeros(self._batch_size, dtype=[('song_id', np.int32),
+                                                        ('artist', np.int32),
+                                                        ('genre_input', np.int32),
+                                                        ('language', np.int32),
+                                                        ('lyricist', np.int32),
+                                                        ('composer', np.int32),
+                                                        ('source', np.int32)])
 
             if self._state + self._batch_size >= len(self._dataset.data):
                 self._state = 0
                 self._dataset.shuffle()
 
             for sample_itr, entry in enumerate(self._dataset.data[self._state:(self._state + self._batch_size)]):
-                neg_id = int(random.random() * (self._dataset.max_item() - 1))
-                while neg_id in self._dataset.get_interactions_by_user_gb_item(entry['user_id']):
-                    neg_id = int(random.random() * (self._dataset.max_item() - 1))
-                p_item_genre_input = self.genre_f[entry['item_id']]
-                n_item_genre_input = self.genre_f[neg_id]
-                input_npy[sample_itr] = (entry['user_id'], entry['item_id'], p_item_genre_input, neg_id, n_item_genre_input)
-
+                input_npy[sample_itr] = (entry['song_id'], entry['artist'], entry['genre_input'], entry['language'], entry['lyricist'], entry['composer'], entry['source'])
             self._state += self._batch_size
             self._q.put(input_npy, block=True)
 

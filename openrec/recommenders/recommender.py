@@ -158,9 +158,9 @@ class Recommender(object):
             A batch of training data.
         """
 
-        _, loss = self._sess.run([self._train_op, self._loss],
+        results = self._sess.run([self._train_op, self._loss] + self._post_training_ops,
                                  feed_dict=self._input_mappings(batch_data, train=True))
-        return loss
+        return results[1]
 
     def serve(self, batch_data):
 
@@ -633,8 +633,9 @@ class Recommender(object):
         """
 
         if hasattr(self, '_train_op'):
+            self._post_training_ops = []
             with tf.control_dependencies([self._train_op]):
-                self._post_training_op = self._build_post_training_ops()
+                self._post_training_ops += self._build_post_training_ops()
 
     def _build_serving_graph(self):
 

@@ -38,7 +38,8 @@ class ImplicitModelTrainer(object):
 
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
-        self._item_serving_size = item_serving_size
+        # self._item_serving_size = item_serving_size
+        self._item_serving_size = None
         self._eval_save_prefix = eval_save_prefix
 
         self._train_dataset = train_dataset

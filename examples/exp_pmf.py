@@ -21,12 +21,12 @@ test_dataset = ImplicitDataset(raw_data['test_data'], raw_data['max_user'], raw_
 
 model = PMF(batch_size=batch_size, max_user=train_dataset.max_user(), max_item=train_dataset.max_item(), 
                 dim_embed=50, opt='Adam', sess_config=sess_config)
-sampler = PointwiseSampler(batch_size=batch_size, dataset=train_dataset, pos_ratio=0.2, num_process=1)
+sampler = PointwiseSampler(batch_size=batch_size, dataset=train_dataset, pos_ratio=0.2, num_process=5)
 model_trainer = ImplicitModelTrainer(batch_size=batch_size, test_batch_size=test_batch_size, 
     train_dataset=train_dataset, model=model, sampler=sampler)
 
 auc_evaluator = AUC()
 recall_evaluator = Recall(recall_at=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 
-model_trainer.train(num_itr=int(1e7), display_itr=display_itr, eval_datasets=[val_dataset, test_dataset],
+model_trainer.train(num_itr=int(1e5), display_itr=display_itr, eval_datasets=[val_dataset, test_dataset],
                     evaluators=[auc_evaluator, recall_evaluator])

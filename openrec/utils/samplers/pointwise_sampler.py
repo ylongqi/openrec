@@ -54,14 +54,14 @@ class _PointwiseSampler(Process):
 
 class PointwiseSampler(Sampler):
 
-    def __init__(self, dataset, batch_size, pos_ratio=0.5, num_process=5, chronological=False):
+    def __init__(self, dataset, batch_size, pos_ratio=0.5, num_process=5, chronological=False, seed=0):
         
         self._pos_ratio = pos_ratio
         self._chronological = chronological
         
         if chronological:
             num_process = 1
-
+        random.seed(seed)
         super(PointwiseSampler, self).__init__(dataset=dataset, batch_size=batch_size, num_process=num_process)
         
     def _get_runner(self):

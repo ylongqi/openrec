@@ -38,7 +38,8 @@ class ImplicitModelTrainer(object):
 
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
-        self._item_serving_size = item_serving_size
+        # self._item_serving_size = item_serving_size
+        self._item_serving_size = None
         self._eval_save_prefix = eval_save_prefix
 
         self._train_dataset = train_dataset
@@ -47,7 +48,7 @@ class ImplicitModelTrainer(object):
         self._model = model
         self._sampler = sampler
 
-    def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None):
+    def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None, seed=10):
         """Train and evaluate a recommender.
 
         Parameters
@@ -73,7 +74,7 @@ class ImplicitModelTrainer(object):
             print(colored('== Start training with FULL evaluation ==', 'blue'))
         else:
             eval_func = self._evaluate_partial
-            self._sample_negatives()
+            self._sample_negatives(seed=seed)
             print(colored('== Start training with sampled evaluation, sample size: %d ==' % num_negatives, 'blue'))
 
         for itr in range(num_itr):
@@ -81,6 +82,8 @@ class ImplicitModelTrainer(object):
             loss = self._model.train(batch_data)
             acc_loss += loss
 
+            if itr % (display_itr // 10) == 0 and itr > 0:
+                print(colored('[Itr %d] Finished' % itr, 'blue'))
             if itr % display_itr == 0 and itr > 0:
                 print(colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr))
                 for dataset in eval_datasets:
@@ -185,9 +188,10 @@ class ImplicitModelTrainer(object):
                     self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user))
 
 
-    def _sample_negatives(self):
+    def _sample_negatives(self, seed):
 
         print(colored('[Subsampling negative items]', 'red'))
+        np.random.seed(seed=seed)
         self._sampled_negatives = {}
         for user in tqdm(self._excluded_positives, leave=False):
             shuffled_items = np.random.permutation(self._max_item)

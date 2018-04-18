@@ -44,12 +44,12 @@ class _PairwiseSampler(Process):
 
 class PairwiseSampler(Sampler):
 
-    def __init__(self, dataset, batch_size, chronological=False, num_process=5):
+    def __init__(self, dataset, batch_size, chronological=False, num_process=5, seed=0):
         
         self._chronological = chronological
         if chronological:
             num_process = 1
-        
+        random.seed(seed) 
         super(PairwiseSampler, self).__init__(dataset=dataset, batch_size=batch_size, num_process=num_process)
 
     def _get_runner(self):

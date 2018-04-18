@@ -1,5 +1,6 @@
 from openrec.modules.interactions.interaction import Interaction
 from openrec.modules.interactions.pairwise_log import PairwiseLog
+from openrec.modules.interactions.pairwise_hinge import PairwiseHinge
 from openrec.modules.interactions.pointwise_ge_ce import PointwiseGeCE
 from openrec.modules.interactions.pointwise_mlp_ce import PointwiseMLPCE
 from openrec.modules.interactions.pairwise_eu_dist import PairwiseEuDist

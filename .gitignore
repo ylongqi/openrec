@@ -12,3 +12,8 @@ results/
 # Setuptools distribution folder.
 /dist/
 *build*
+examples/*.index
+examples/*.meta
+examples/*.data-0*
+examples/checkpoint
+examples/*.pickle

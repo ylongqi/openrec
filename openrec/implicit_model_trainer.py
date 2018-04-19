@@ -6,6 +6,7 @@ import numpy as np
 from openrec.utils.evaluators import ImplicitEvalManager
 import sys
 import json
+import pickle
 
 class ImplicitModelTrainer(object):
 
@@ -84,6 +85,10 @@ class ImplicitModelTrainer(object):
             if itr % (display_itr // 10) == 0 and itr > 0:
                 print(colored('[Itr %d] Finished' % itr, 'blue'))
             if itr % display_itr == 0 and itr > 0:
+                
+                if self._eval_save_prefix:
+                    self._model.save(self._eval_save_prefix, itr)
+
                 print(colored('[Itr %d]' % itr, 'red'), 'loss: %f' % (acc_loss/display_itr))
                 for dataset in eval_datasets:
                     print(colored('..(dataset: %s) evaluation' % dataset.name, 'green'))
@@ -150,24 +155,23 @@ class ImplicitModelTrainer(object):
             metric_results[evaluator.name] = []
 
         to_be_saved = dict()
+        to_be_saved["num_negatives"] = self._num_negatives
         to_be_saved["users"] = list()
+        to_be_saved["user_items"] = dict()
+        to_be_saved["results"] = dict()
         for user in tqdm(eval_dataset.get_unique_user_list()):
             to_be_saved["users"].append(int(user))
             items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user)
+            to_be_saved["user_items"][int(user)] = items
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])
+            to_be_saved["results"][int(user)] = scores
             for key in result:
                 metric_results[key].append(result[key])
 
         if self._eval_save_prefix:
-            for evaluator in self._eval_manager.evaluators:
-                to_be_saved[evaluator.name] = list(metric_results[evaluator.name])
-                if len(to_be_saved[evaluator.name]) > 0 and type(to_be_saved[evaluator.name][0]) != np.float64:
-                    to_be_saved[evaluator.name] = [list(a) for a in to_be_saved[evaluator.name]]
-                else:
-                    to_be_saved[evaluator.name] = [float(a) for a in to_be_saved[evaluator.name]]
-            tmpf = open(self._eval_save_prefix + "_evaluate_partial.json", 'w')
-            tmpf.write(json.dumps(to_be_saved))
+            tmpf = open(self._eval_save_prefix + "_evaluate_partial.pickle", 'wb')
+            pickle.dump(to_be_saved, tmpf)
             tmpf.close()
 
         return metric_results
@@ -189,7 +193,7 @@ class ImplicitModelTrainer(object):
                     self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user))
 
 
-    def _sample_negatives(self, seed):
+    def _sample_negatives(self, seed=10):
 
         print(colored('[Subsampling negative items]', 'red'))
         np.random.seed(seed=seed)

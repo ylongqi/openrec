@@ -39,9 +39,6 @@ class NSEuDist(Interaction):
     def _build_training_graph(self):
         
         with tf.variable_scope(self._scope, reuse=self._reuse):
-            self._user = self._censor_norm(self._user)
-            self._p_item = self._censor_norm(self._p_item)
-            self._n_item = self._censor_norm(self._n_item)
             tmp_user = tf.tile(tf.expand_dims(self._user, 1), [1, self._neg_num, 1])
 
             l2_user_pos = tf.tile(tf.reduce_sum(tf.square(tf.subtract(self._user, self._p_item)),
@@ -57,12 +54,7 @@ class NSEuDist(Interaction):
     def _build_serving_graph(self):
         
         with tf.variable_scope(self._scope, reuse=self._reuse):
-            self._user = self._censor_norm(self._user)
-            self._item = self._censor_norm(self._item)
             item_norms = tf.reduce_sum(tf.square(self._item), axis=1)
             self._outputs.append(2 * tf.matmul(self._user, self._item, transpose_b=True) + \
                             tf.reshape(self._item_bias, [-1]) - tf.reshape(item_norms, [-1]))
 
-    def _censor_norm(self, in_tensor):
-        norm = tf.sqrt(tf.reduce_sum(tf.square(in_tensor), axis=-1, keep_dims=True))
-        return in_tensor / tf.maximum(norm, 1.0)

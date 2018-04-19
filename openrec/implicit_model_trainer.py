@@ -170,9 +170,8 @@ class ImplicitModelTrainer(object):
                 metric_results[key].append(result[key])
 
         if self._eval_save_prefix:
-            tmpf = open(self._eval_save_prefix + "_evaluate_partial.pickle", 'wb')
-            pickle.dump(to_be_saved, tmpf)
-            tmpf.close()
+            with open(self._eval_save_prefix + "_evaluate_partial.pickle", 'wb') as tmpf:
+                pickle.dump(to_be_saved, tmpf)
 
         return metric_results
 

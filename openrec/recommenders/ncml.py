@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import NSEuDist
@@ -45,6 +46,12 @@ class NCML(Recommender):
         else:
             self._add_input(name='item_id', dtype='none', train=False)
 
+    def _build_post_training_ops(self):
+        unique_user_id, _ = tf.unique(self._get_input('user_id'))
+        unique_item_id, _ = tf.unique(tf.concat([self._get_input('p_item_id'), tf.reshape(self._get_input('n_item_id'), [-1])], axis=0))
+        return [self._get_module('user_vec').censor_l2_norm_op(censor_id_list=unique_user_id),
+                self._get_module('p_item_vec').censor_l2_norm_op(censor_id_list=unique_item_id)]
+    
     def _build_user_extractions(self, train=True):
         
         self._add_module('user_vec', 

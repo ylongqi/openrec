@@ -50,9 +50,9 @@ class NSEuDist(Interaction):
             l2_user_neg = tf.reduce_sum(tf.square(tf.subtract(tmp_user, self._n_item)),
                                         reduction_indices=2, 
                                         name="l2_user_neg")
-            pos_score = l2_user_pos + tf.tile(self._p_item_bias, [1, self._neg_num])         # shape=(2000, self._neg_num)
-            neg_score = l2_user_neg + tf.reduce_sum(self._n_item_bias, reduction_indices=2)  # shape=(2000, self._neg_num)
-            self._loss = tf.reduce_sum(self._weights * tf.maximum(self._margin + pos_score - neg_score, 0))
+            pos_score = (-l2_user_pos) + tf.tile(self._p_item_bias, [1, self._neg_num])
+            neg_score = (-l2_user_neg) + tf.reduce_sum(self._n_item_bias, reduction_indices=2)
+            self._loss = tf.reduce_sum(self._weights * tf.maximum(self._margin - pos_score + neg_score, 0))
 
     def _build_serving_graph(self):
         

@@ -193,7 +193,7 @@ class ImplicitModelTrainer(object):
                     self._excluded_positives[user] = self._excluded_positives[user].union(dataset.get_interactions_by_user_gb_item(user))
 
 
-    def _sample_negatives(self, seed=10):
+    def _sample_negatives(self, seed):
 
         print(colored('[Subsampling negative items]', 'red'))
         np.random.seed(seed=seed)

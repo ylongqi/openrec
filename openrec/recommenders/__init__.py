@@ -9,6 +9,7 @@ from openrec.recommenders.cml import CML
 from openrec.recommenders.ncml import NCML
 from openrec.recommenders.visual_bpr import VisualBPR
 from openrec.recommenders.visual_cml import VisualCML
+from openrec.recommenders.gmf import GMF
 from openrec.recommenders.visual_gmf import VisualGMF
 from openrec.recommenders.user_pmf import UserPMF
 from openrec.recommenders.user_visual_pmf import UserVisualPMF

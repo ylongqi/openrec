@@ -97,14 +97,16 @@ class NCML(Recommender):
                                     n_item=self._get_module('n_item_vec').get_outputs()[0], 
                                     p_item_bias=self._get_module('p_item_bias').get_outputs()[0],
                                     n_item_bias=self._get_module('n_item_bias').get_outputs()[0], 
-                                    scope='pairwise_log', reuse=False, train=True),
+                                    scope='pairwise_log', reuse=False, train=True,
+                                    max_item=self._max_item),
                             train=True)
         else:
             self._add_module('interaction',
                             NSEuDist(user=self._get_module('user_vec', train=train).get_outputs()[0],
                                         item=self._get_module('item_vec', train=train).get_outputs()[0], 
                                         item_bias=self._get_module('item_bias', train=train).get_outputs()[0],
-                                        scope='pairwise_log', reuse=True, train=False),
+                                        scope='pairwise_log', reuse=True, train=False,
+                                        max_item=self._max_item),
                             train=False)
 
     def _build_serving_graph(self):

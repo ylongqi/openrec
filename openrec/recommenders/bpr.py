@@ -67,7 +67,8 @@ class BPR(Recommender):
                     self._get_input('p_item_id'): batch_data['p_item_id_input'],
                     self._get_input('n_item_id'): batch_data['n_item_id_input']}
         else:
-            return {self._get_input('user_id', train=train): batch_data['user_id_input']}
+            return {self._get_input('user_id', train=train): batch_data['user_id_input'],
+                    self._get_input('item_id', train=train): batch_data['item_id_input']}
 
     def _build_user_inputs(self, train=True):
         
@@ -82,7 +83,7 @@ class BPR(Recommender):
             self._add_input(name='p_item_id', dtype='int32', shape=[self._batch_size])
             self._add_input(name='n_item_id', dtype='int32', shape=[self._batch_size])
         else:
-            self._add_input(name='item_id', dtype='none', train=False)
+            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
 
     def _build_user_extractions(self, train=True):
         

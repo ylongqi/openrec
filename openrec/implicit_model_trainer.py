@@ -38,8 +38,7 @@ class ImplicitModelTrainer(object):
 
         self._batch_size = batch_size
         self._test_batch_size = test_batch_size
-        # self._item_serving_size = item_serving_size
-        self._item_serving_size = None
+        self._item_serving_size = item_serving_size
         self._eval_save_prefix = eval_save_prefix
 
         self._train_dataset = train_dataset
@@ -103,7 +102,8 @@ class ImplicitModelTrainer(object):
     def _score_full_items(self, users):
 
         if self._item_serving_size is None:
-            return self._model.serve({'user_id_input': users})
+            return self._model.serve({'user_id_input': users,
+                                    'item_id_input': np.arange(self._max_item)})
         else:
             scores = []
             item_id_input = np.zeros(self._item_serving_size, np.int32)
@@ -118,7 +118,8 @@ class ImplicitModelTrainer(object):
     def _score_partial_items(self, user, items):
 
         if self._item_serving_size is None:
-            return self._model.serve({'user_id_input': [user]})[0][np.array(items)]
+            return self._model.serve({'user_id_input': [user],
+                                    'item_id_input': np.arange(self._max_item)})[0][np.array(items)]
         else:
             return self._model.serve({'user_id_input': [user], 
                                'item_id_input': np.array(items)})[0]

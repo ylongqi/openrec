@@ -65,7 +65,7 @@ class BPR(Recommender):
         if train:
             return {self._get_input('user_id'): batch_data['user_id_input'],
                     self._get_input('p_item_id'): batch_data['p_item_id_input'],
-                    self._get_input('n_item_id'): batch_data['n_item_id_input']}
+                    self._get_input('n_item_id'): batch_data['n_item_id_inputs']}
         else:
             return {self._get_input('user_id', train=train): batch_data['user_id_input'],
                     self._get_input('item_id', train=train): batch_data['item_id_input']}

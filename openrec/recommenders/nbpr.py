@@ -43,7 +43,7 @@ class NBPR(BPR):
             self._add_input(name='p_item_id', dtype='int32', shape=[self._batch_size])
             self._add_input(name='n_item_id', dtype='int32', shape=[self._batch_size, self._neg_num])
         else:
-            self._add_input(name='item_id', dtype='none', train=False)
+            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
 
 
     def _build_default_interactions(self, train=True):

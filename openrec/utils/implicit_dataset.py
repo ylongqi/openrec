@@ -40,14 +40,14 @@ class ImplicitDataset(Dataset):
         self._gb_user_item = dict()
         for entry in self.raw_data:
             if entry['user_id'] not in self._gb_user_item:
-                self._gb_user_item[entry['user_id']] = list()
-            self._gb_user_item[entry['user_id']].append(entry['item_id'])
+                self._gb_user_item[entry['user_id']] = set()
+            self._gb_user_item[entry['user_id']].add(entry['item_id'])
         
         self._gb_item_user = dict()
         for entry in self.raw_data:
             if entry['item_id'] not in self._gb_item_user:
-                self._gb_item_user[entry['item_id']] = list()
-            self._gb_item_user[entry['item_id']].append(entry['user_id'])
+                self._gb_item_user[entry['item_id']] = set()
+            self._gb_item_user[entry['item_id']].add(entry['user_id'])
         
         self._num_user = len(self._gb_user_item)
         self._num_item = len(self._gb_item_user)

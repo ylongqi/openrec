@@ -46,7 +46,7 @@ class NsLog(Interaction):
             pos_score = dot_user_pos + tf.tile(self._p_item_bias, [1, self._neg_num])
             neg_score = dot_user_neg + tf.reduce_sum(self._n_item_bias, reduction_indices=2)
             diff = pos_score - neg_score
-            self._loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(tf.reduce_max(diff,axis = 1),
+            self._loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(tf.reduce_min(diff,axis = 1),
                                                                       -30.0))))
 
     def _build_serving_graph(self):

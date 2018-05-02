@@ -47,7 +47,7 @@ class NsLog(Interaction):
             pos_score = dot_user_pos + tf.tile(self._p_item_bias, [1, self._neg_num])
             neg_score = dot_user_neg + tf.reduce_sum(self._n_item_bias, reduction_indices=2)
             diff = pos_score - neg_score
-            weights = tf.count_nonzero(tf.less(a, 0.0), axis=1)
+            weights = tf.count_nonzero(tf.less(diff, 0.0), axis=1)
             weights = tf.log(tf.floor(self._max_item * tf.to_float(weights) / self._neg_num) + 1.0)
             self._loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(weights * tf.reduce_min(diff, axis = 1),
                                                                       -30.0))))

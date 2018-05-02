@@ -3,13 +3,14 @@ from openrec.modules.interactions import Interaction
 
 class NsLog(Interaction):
 
-    def __init__(self, user, item=None, item_bias=None, p_item=None, p_item_bias=None, neg_num=5,
+    def __init__(self, user, max_item, item=None, item_bias=None, p_item=None, p_item_bias=None, neg_num=5,
                 n_item=None, n_item_bias=None, train=None, scope=None, reuse=False):
 
         assert train is not None, 'train cannot be None'
         assert user is not None, 'user cannot be None'
         self._user = user
         self._neg_num = neg_num
+        self._max_item = max_item
 
         if train:
 
@@ -46,7 +47,9 @@ class NsLog(Interaction):
             pos_score = dot_user_pos + tf.tile(self._p_item_bias, [1, self._neg_num])
             neg_score = dot_user_neg + tf.reduce_sum(self._n_item_bias, reduction_indices=2)
             diff = pos_score - neg_score
-            self._loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(tf.reduce_min(diff,axis = 1),
+            weights = tf.count_nonzero(tf.less(a, 0.0), axis=1)
+            weights = tf.log(tf.floor(self._max_item * tf.to_float(weights) / self._neg_num) + 1.0)
+            self._loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(weights * tf.reduce_min(diff, axis = 1),
                                                                       -30.0))))
 
     def _build_serving_graph(self):

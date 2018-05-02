@@ -51,7 +51,8 @@ class NBPR(BPR):
 
         if train:
             self._add_module('interaction',
-                            NsLog(user=self._get_module('user_vec').get_outputs()[0], 
+                            NsLog(user=self._get_module('user_vec').get_outputs()[0],
+                                  max_item=self._max_item,
                                     p_item=self._get_module('p_item_vec').get_outputs()[0],
                                     n_item=self._get_module('n_item_vec').get_outputs()[0], 
                                     p_item_bias=self._get_module('p_item_bias').get_outputs()[0],
@@ -61,6 +62,7 @@ class NBPR(BPR):
         else:
             self._add_module('interaction',
                             NsLog(user=self._get_module('user_vec', train=train).get_outputs()[0],
+                                  max_item=self._max_item,
                                         item=self._get_module('item_vec', train=train).get_outputs()[0], 
                                         item_bias=self._get_module('item_bias', train=train).get_outputs()[0],
                                         scope='pairwise_log', reuse=True, train=False),

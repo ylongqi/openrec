@@ -81,7 +81,6 @@ class ImplicitModelTrainer(object):
             batch_data = self._sampler.next_batch()
             loss = self._model.train(batch_data)
             acc_loss += loss
-
             if itr % (display_itr // 10) == 0 and itr > 0:
                 print(colored('[Itr %d] Finished' % itr, 'blue'))
             if itr % display_itr == 0 and itr > 0:
@@ -140,7 +139,7 @@ class ImplicitModelTrainer(object):
             scores = self._score_full_items(users=users)
             for u_ind, user in enumerate(users):
                 result = self._eval_manager.full_eval(
-                                    pos_samples=eval_dataset.get_interactions_by_user_gb_item(user),
+                                    pos_samples=list(eval_dataset.get_interactions_by_user_gb_item(user)),
                                     excl_pos_samples=self._excluded_positives[user],
                                     predictions=scores[u_ind])
                 for key in result:
@@ -161,7 +160,7 @@ class ImplicitModelTrainer(object):
         to_be_saved["results"] = dict()
         for user in tqdm(eval_dataset.get_unique_user_list()):
             to_be_saved["users"].append(int(user))
-            items = self._sampled_negatives[user] + eval_dataset.get_interactions_by_user_gb_item(user)
+            items = self._sampled_negatives[user] + list(eval_dataset.get_interactions_by_user_gb_item(user))
             to_be_saved["user_items"][int(user)] = items
             scores = self._score_partial_items(user, items)
             result = self._eval_manager.partial_eval(pos_scores=scores[self._num_negatives:], neg_scores=scores[:self._num_negatives])

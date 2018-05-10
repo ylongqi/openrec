@@ -6,7 +6,7 @@ from openrec.recommenders.concat_visual_bpr import ConcatVisualBPR
 from openrec.recommenders.visual_pmf import VisualPMF
 from openrec.recommenders.cdl import CDL
 from openrec.recommenders.cml import CML
-from openrec.recommenders.ncml import NCML
+from openrec.recommenders.wcml import WCML
 from openrec.recommenders.visual_bpr import VisualBPR
 from openrec.recommenders.visual_cml import VisualCML
 from openrec.recommenders.gmf import GMF

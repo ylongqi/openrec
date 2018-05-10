@@ -4,7 +4,7 @@ from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import NSEuDist
 
-class NCML(Recommender):
+class WCML(Recommender):
 
     def __init__(self, batch_size, max_user, max_item, dim_embed, 
         test_batch_size=None, l2_reg=None, opt='SGD', lr=None, init_dict=None, sess_config=None, neg_num=5):
@@ -12,7 +12,7 @@ class NCML(Recommender):
         self._dim_embed = dim_embed
         self._neg_num = neg_num
 
-        super(NCML, self).__init__(batch_size=batch_size, 
+        super(WCML, self).__init__(batch_size=batch_size, 
                                   test_batch_size=test_batch_size,
                                   max_user=max_user, 
                                   max_item=max_item, 
@@ -112,5 +112,5 @@ class NCML(Recommender):
 
     def _build_serving_graph(self):
         
-        super(NCML, self)._build_serving_graph()
+        super(WCML, self)._build_serving_graph()
         self._scores = self._get_module('interaction', train=False).get_outputs()[0]

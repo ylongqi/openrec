@@ -79,7 +79,7 @@ class ImplicitModelTrainer(object):
 
         for itr in range(num_itr):
             batch_data = self._sampler.next_batch()
-            loss = self._model.train(batch_data)
+            loss = self._model.train(batch_data)['losses'][0]
             acc_loss += loss
             if itr % (display_itr // 10) == 0 and itr > 0:
                 print(colored('[Itr %d] Finished' % itr, 'blue'))
@@ -106,8 +106,8 @@ class ImplicitModelTrainer(object):
     def _score_full_items(self, users):
 
         if self._item_serving_size is None:
-            return self._model.serve({'user_id_input': users,
-                                    'item_id_input': np.arange(self._max_item)})
+            return self._model.serve({'user_id': users,
+                                    'item_id': np.arange(self._max_item)})['outputs'][0]
         else:
             scores = []
             item_id_input = np.zeros(self._item_serving_size, np.int32)
@@ -115,18 +115,18 @@ class ImplicitModelTrainer(object):
                 item_id_list = range(ibatch*self._item_serving_size,
                                 min((ibatch+1)*self._item_serving_size, self._max_item))
                 item_id_input[:len(item_id_list)] = item_id_list
-                scores.append(self._model.serve({'user_id_input': users, 
-                                                'item_id_input': item_id_input})[:len(item_id_list)])
+                scores.append(self._model.serve({'user_id': users, 
+                                                'item_id': item_id_input})['outputs'][0][:len(item_id_list)])
             return np.concatenate(scores, axis=1)
 
     def _score_partial_items(self, user, items):
 
         if self._item_serving_size is None:
-            return self._model.serve({'user_id_input': [user],
-                                    'item_id_input': np.arange(self._max_item)})[0][np.array(items)]
+            return self._model.serve({'user_id': [user],
+                                    'item_id': np.arange(self._max_item)})['outputs'][0][0][np.array(items)]
         else:
-            return self._model.serve({'user_id_input': [user], 
-                               'item_id_input': np.array(items)})[0]
+            return self._model.serve({'user_id': [user], 
+                               'item_id': np.array(items)})['outputs'][0][0]
 
     def _evaluate_full(self, eval_dataset):
 

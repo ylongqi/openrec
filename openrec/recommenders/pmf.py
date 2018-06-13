@@ -1,79 +1,133 @@
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import PointwiseMSE
+import tensorflow as tf
 
-class PMF(Recommender):
+def PMF(batch_size, dim_embed, max_user, max_item, l2_reg=None,
+    init_model_dir=None, save_model_dir='Recommender/', training=True, serving=False):
 
-    def __init__(self, batch_size, dim_embed, max_user, max_item,
-                    test_batch_size=None, l2_reg=None, opt='SGD', sess_config=None):
+    r = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
+                    training=training, serving=serving)
 
-        self._dim_embed = dim_embed
+    @r.T.InputGraph(['user_id', 'item_id', 'labels'])
+    def training_input_graph(sg):
+        user_id_input = tf.placeholder(tf.int32, shape=[batch_size], name='user_id')
+        item_id_input = tf.placeholder(tf.int32, shape=[batch_size], name='item_id')
+        labels = tf.placeholder(tf.float32, shape=[batch_size], name='labels')
+        sg.set('user_id', user_id_input)
+        sg.set('item_id', item_id_input)
+        sg.set('labels', labels)
+        sg.super.register_input_mapping({'user_id': user_id_input,
+                            'item_id': item_id_input,
+                            'labels': labels})
 
-        super(PMF, self).__init__(batch_size=batch_size, 
-                                  test_batch_size=test_batch_size,
-                                  max_user=max_user, 
-                                  max_item=max_item, 
-                                  l2_reg=l2_reg,
-                                  opt=opt, sess_config=sess_config)
+    @r.S.InputGraph(['user_id', 'item_id'])
+    def serving_input_graph(sg):
+        user_id_input = tf.placeholder(tf.int32, shape=[None], name='user_id')
+        item_id_input = tf.placeholder(tf.int32, shape=[None], name='item_id')
+        sg.set('user_id', user_id_input)
+        sg.set('item_id', item_id_input)
+        sg.super.register_input_mapping({'user_id': user_id_input,
+                                'item_id': item_id_input})
 
-    def _input_mappings(self, batch_data, train):
+    @r.T.UserGraph(['user_vec'])
+    @r.S.UserGraph(['user_vec'])
+    def user_graph(sg):
+        user_id_input = sg.super.InputGraph.get('user_id')
+        _, user_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=user_id_input,
+                    shape=[max_user, dim_embed], scope='user')
+        sg.set('user_vec', user_vec)
 
-        if train:
-            return {self._get_input('user_id'): batch_data['user_id_input'],
-                    self._get_input('item_id'): batch_data['item_id_input'],
-                    self._get_input('labels'): batch_data['labels']}
-        else:
-            return {self._get_input('user_id', train=False): batch_data['user_id_input'],
-                    self._get_input('item_id', train=False): batch_data['item_id_input']}
+    @r.T.ItemGraph(['item_vec', 'item_bias'])
+    @r.S.ItemGraph(['item_vec', 'item_bias'])
+    def item_graph(sg):
+        item_id_input = sg.super.InputGraph.get('item_id')
+        _, item_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=item_id_input,
+                    shape=[max_item, dim_embed], subgraph=sg, scope='item')
+        _, item_bias = LatentFactor(l2_reg=l2_reg, init='zero', ids=item_id_input,
+                    shape=[max_item, 1], subgraph=sg, scope='item_bias')
+        sg.set('item_vec', item_vec)
+        sg.set('item_bias', item_bias)
 
-    def _build_user_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='user_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='user_id', dtype='int32', shape=[None], train=False)
+    @r.T.InteractionGraph([])
+    def interaction_graph(sg):
+        user_vec = sg.super.UserGraph.get('user_vec')
+        item_vec = sg.super.ItemGraph.get('item_vec')
+        item_bias = sg.super.ItemGraph.get('item_bias')
+        labels = sg.super.InputGraph.get('labels')
+        PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
+                    item_bias=item_bias, labels=labels, 
+                    a=1.0, b=1.0, sigmoid=False,
+                    train=True, subgraph=sg, scope='PointwiseMSE')
+
+    @r.T.OptimizerGraph([])
+    def optimizer_graph(sg):
+        losses = tf.add_n(sg.super.get_losses())
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        sg.super.register_train_op(optimizer.minimize(losses))
+
+    @r.S.InteractionGraph([])
+    def serving_interaction_graph(sg):
+        user_vec = sg.super.UserGraph.get('user_vec')
+        item_vec = sg.super.ItemGraph.get('item_vec')
+        item_bias = sg.super.ItemGraph.get('item_bias')
+
+        PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
+                    item_bias=item_bias, a=1.0, b=1.0, sigmoid=False,
+                    train=False, subgraph=sg, scope='PointwiseMSE')
     
-    def _build_item_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='item_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
+    return r.build()
+
+def InferPMF(dim_embed, max_item, l2_reg=None,
+    init_model_dir=None, save_model_dir=None, training=True, serving=False):
     
-    def _build_extra_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='labels', dtype='float32', shape=[self._batch_size])
-
-    def _build_user_extractions(self, train=True):
-
-        self._add_module('user_vec', 
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('user_id', train=train),
-                                    shape=[self._max_user, self._dim_embed], scope='user', reuse=not train), 
-                         train=train)
+    r = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
+                          training=training, serving=serving)
     
-    def _build_item_extractions(self, train=True):
+    @r.T.InputGraph(['user_upvote', 'item_id', 'labels'])
+    def input_graph(sg):
+        user_upvote = tf.placeholder(tf.int32, shape=[None], name='user_upvote')
+        item_id = tf.range(max_item, dtype=tf.int32)
+        labels = tf.reduce_sum(tf.one_hot(user_upvote, depth=max_item, dtype=tf.float32), axis=0)
+        sg.set('user_upvote', user_upvote)
+        sg.set('item_id', item_id)
+        sg.set('labels', labels)
+        sg.super.register_input_mapping({'user_upvote': user_upvote})
+    
+    @r.T.ItemGraph(['item_vec', 'item_bias'])
+    def item_graph(sg):
+        item_id_input = sg.super.InputGraph.get('item_id')
+        _, item_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=item_id_input,
+                    shape=[max_item, dim_embed], subgraph=sg, scope='item')
+        _, item_bias = LatentFactor(l2_reg=l2_reg, init='zero', ids=item_id_input,
+                    shape=[max_item, 1], subgraph=sg, scope='item_bias')
+        sg.set('item_vec', item_vec)
+        sg.set('item_bias', item_bias)
+    
+    @r.T.UserGraph(['temp_user_embedding', 'user_vec'])
+    def user_graph(sg):
+        temp_user_embedding, user_vec = LatentFactor(l2_reg=l2_reg, init='normal', 
+                                                ids=tf.zeros([max_item], dtype=tf.int32),
+                                                shape=[1, dim_embed], subgraph=sg, scope='temp_user')
+        sg.set('user_vec', user_vec)
+        sg.set('temp_user_embedding', temp_user_embedding)
+
+    @r.T.OptimizerGraph([])
+    def optimizer_graph(sg):
+        temp_user_embedding = sg.super.UserGraph.get('temp_user_embedding')
+        losses = tf.add_n(sg.super.get_losses())
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        sg.super.register_train_op(tf.variables_initializer([temp_user_embedding] + optimizer.variables()), identifier='init')
+        sg.super.register_train_op(optimizer.minimize(losses, var_list=[temp_user_embedding]))
         
-        self._add_module('item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=not train), 
-                         train=train)
-        self._add_module('item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=not train), 
-                         train=train)
-
-    def _build_default_interactions(self, train=True):
-
-        self._add_module('interaction',
-                        PointwiseMSE(user=self._get_module('user_vec', train=train).get_outputs()[0], 
-                                        item=self._get_module('item_vec', train=train).get_outputs()[0],
-                                        item_bias=self._get_module('item_bias', train=train).get_outputs()[0], 
-                                        labels=self._get_input('labels'), a=1.0, b=1.0, sigmoid=True, 
-                                        train=train, scope='PointwiseMSE', reuse=not train),
-                        train=train)
-
-    def _build_serving_graph(self):
-
-        super(PMF, self)._build_serving_graph()
-        self._scores = self._get_module('interaction', train=False).get_outputs()[0]
+    @r.T.InteractionGraph([])
+    def interaction_graph(sg):
+        user_vec = sg.super.UserGraph.get('user_vec')
+        item_vec = sg.super.ItemGraph.get('item_vec')
+        item_bias = sg.super.ItemGraph.get('item_bias')
+        labels = sg.super.InputGraph.get('labels')
+        PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
+                    item_bias=item_bias, labels=labels, a=1.0, b=0.25, sigmoid=False,
+                    train=True, subgraph=sg, scope='PointwiseMSE')
+    
+    return r.build()

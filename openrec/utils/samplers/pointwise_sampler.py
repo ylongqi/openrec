@@ -24,8 +24,8 @@ class _PointwiseSampler(Process):
     def run(self):
         while True:
             
-            input_npy = np.zeros(self._batch_size, dtype=[('user_id_input', np.int32),
-                                                        ('item_id_input', np.int32),
+            input_npy = np.zeros(self._batch_size, dtype=[('user_id', np.int32),
+                                                        ('item_id', np.int32),
                                                         ('labels', np.float32)])
 
             if self._state + self._num_pos >= len(self._dataset.data):

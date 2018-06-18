@@ -190,14 +190,31 @@ class Recommender(object):
                             feed_dict=feed_dict)
 
         return {'losses': results[:len(losses)], 'outputs': results[len(losses):]}
-
+    
+    def save(self, save_model_dir=None):
+        
+        if save_model_dir is None:
+            save_model_dir = self._save_model_dir
+        self._tf_training_saver.save(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
+    
+    def restore(self, save_model_dir=None, restore_training=False, restore_serving=False):
+        
+        if save_model_dir is None:
+            save_model_dir = self._save_model_dir
+        if restore_training:
+            assert self._training is not None, 'Training is not enabled.'
+            self._optimistic_restore(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
+        if restore_serving:
+            assert self._serving is not None, 'Serving is not enabled.'
+            self._optimistic_restore(self._tf_serving_sess, os.path.join(save_model_dir, 'model.ckpt'))
+            
     def _save_and_load_for_serving(self):
         
         assert self._save_model_dir is not None, 'save_model_dir is not specified'
         if self._training:
-            self._tf_training_saver.save(self._tf_training_sess, os.path.join(self._save_model_dir, 'model.ckpt'))
+            self.save()
         if self._serving:
-            self._tf_serving_saver.restore(self._tf_serving_sess, os.path.join(self._save_model_dir, 'model.ckpt'))
+            self.restore(restore_serving=True)
     
     def _optimistic_restore(self, session, save_file):
         
@@ -223,8 +240,6 @@ class Recommender(object):
                 self._tf_training_sess = tf.Session()
                 self._tf_training_sess.run(tf.global_variables_initializer())
                 self._tf_training_saver = tf.train.Saver(tf.global_variables())
-                if self._init_model_dir is not None:
-                    self._optimistic_restore(self._tf_training_sess, os.path.join(self._init_model_dir, 'model.ckpt'))
 
         if self._serving:
             self.ServingGraph.build()
@@ -232,7 +247,10 @@ class Recommender(object):
                 self._tf_serving_sess = tf.Session()
                 self._tf_serving_sess.run(tf.global_variables_initializer())
                 self._tf_serving_saver = tf.train.Saver(tf.global_variables())
-                if self._init_model_dir is not None:
-                    self._optimistic_restore(self._tf_serving_sess, os.path.join(self._init_model_dir, 'model.ckpt'))
+        
+        if self._init_model_dir is not None:
+            self.restore(save_model_dir=self._init_model_dir,
+                        restore_training=self._training,
+                        restore_serving=self._serving)
 
         return self

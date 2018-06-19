@@ -195,7 +195,8 @@ class Recommender(object):
         
         if save_model_dir is None:
             save_model_dir = self._save_model_dir
-        self._tf_training_saver.save(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
+        with self.TrainingGraph.tf_graph.as_default():
+            self._tf_training_saver.save(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
     
     def restore(self, save_model_dir=None, restore_training=False, restore_serving=False):
         
@@ -203,10 +204,12 @@ class Recommender(object):
             save_model_dir = self._save_model_dir
         if restore_training:
             assert self._training is not None, 'Training is not enabled.'
-            self._optimistic_restore(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
+            with self.TrainingGraph.tf_graph.as_default():
+                self._optimistic_restore(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
         if restore_serving:
             assert self._serving is not None, 'Serving is not enabled.'
-            self._optimistic_restore(self._tf_serving_sess, os.path.join(save_model_dir, 'model.ckpt'))
+            with self.ServingGraph.tf_graph.as_default():
+                self._optimistic_restore(self._tf_serving_sess, os.path.join(save_model_dir, 'model.ckpt'))
             
     def _save_and_load_for_serving(self):
         

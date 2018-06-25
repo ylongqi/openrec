@@ -170,7 +170,12 @@ class Recommender(object):
         
         self._flag_updated = True
         return return_dict
-
+    
+    def get_parameter(self, name):
+        
+        tensor = self.TrainingGraph.tf_graph.get_tensor_by_name(name)
+        return self._tf_training_sess.run(tensor)
+        
     def serve(self, batch_data, input_mapping_id='default', losses_id='default', outputs_id='default'):
 
         assert self._serving, "Serving is disabled"
@@ -232,6 +237,7 @@ class Recommender(object):
                 var_shape = curr_var.get_shape().as_list()
                 if var_shape == saved_shapes[saved_var_name]:
                     restore_vars.append(curr_var)
+        print('... restored variables:', ','.join([var.name for var in restore_vars]))
         saver = tf.train.Saver(restore_vars)
         saver.restore(session, save_file)
             

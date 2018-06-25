@@ -23,11 +23,10 @@ class _PointwiseSampler(Process):
 
     def run(self):
         while True:
-            
             input_npy = np.zeros(self._batch_size, dtype=[('user_id', np.int32),
                                                         ('item_id', np.int32),
                                                         ('labels', np.float32)])
-
+            
             if self._state + self._num_pos >= len(self._dataset.data):
                 if not self._chronological:
                     self._state = 0
@@ -40,12 +39,12 @@ class _PointwiseSampler(Process):
                 input_npy[ind] = (entry['user_id'], entry['item_id'], 1.0)
 
             for ind in range(self._batch_size - self._num_pos):
-                user_ind = int(random.random() * (len(self._user_list) - 1))
+                user_ind = min(int(random.random() * len(self._user_list)), len(self._user_list) - 1)
                 user_id = self._user_list[user_ind]
-                neg_id = int(random.random() * (self._dataset.max_item() - 1))
+                neg_id = min(int(random.random() * self._dataset.max_item()), self._dataset.max_item() - 1)
 
                 while neg_id in self._dataset.get_interactions_by_user_gb_item(user_id):
-                    neg_id = int(random.random() * (self._dataset.max_item() - 1))
+                    neg_id = min(int(random.random() * self._dataset.max_item()), self._dataset.max_item() - 1)
                 input_npy[ind + self._num_pos] = (user_id, neg_id, 0.0)
                 
             self._state += self._num_pos

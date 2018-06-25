@@ -17,7 +17,7 @@ def PointwiseMSE(user_vec, item_vec, item_bias, subgraph,
         else:
             predictions = dot_user_item + tf.reshape(item_bias, [-1])
 
-        subgraph.super.register_loss(tf.nn.l2_loss(labels_weight * (labels - predictions)))
+        subgraph.super.register_loss(tf.reduce_sum(labels_weight * tf.square(labels - predictions)))
         subgraph.super.register_output(predictions)
         
     else:

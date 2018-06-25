@@ -33,9 +33,9 @@ class _PairwiseSampler(Process):
                     break
 
             for sample_itr, entry in enumerate(self._dataset.data[self._state:(self._state + self._batch_size)]):
-                neg_id = int(random.random() * (self._dataset.max_item() - 1))
+                neg_id = min(int(random.random() * self._dataset.max_item()), self._dataset.max_item() - 1)
                 while neg_id in self._dataset.get_interactions_by_user_gb_item(entry['user_id']):
-                    neg_id = int(random.random() * (self._dataset.max_item() - 1))
+                    neg_id = min(int(random.random() * self._dataset.max_item()), self._dataset.max_item() - 1)
                 input_npy[sample_itr] = (entry['user_id'], entry['item_id'], neg_id)
 
             self._state += self._batch_size

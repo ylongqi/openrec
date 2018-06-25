@@ -3,7 +3,7 @@ from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import PointwiseMSE
 import tensorflow as tf
 
-def PMF(batch_size, dim_embed, max_user, max_item, l2_reg=None,
+def PMF(batch_size, dim_embed, max_user, max_item, a=1.0, b=0.01, l2_reg=None,
     init_model_dir=None, save_model_dir='Recommender/', training=True, serving=False):
 
     r = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
@@ -57,7 +57,7 @@ def PMF(batch_size, dim_embed, max_user, max_item, l2_reg=None,
         labels = sg.super.InputGraph.get('labels')
         PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
                     item_bias=item_bias, labels=labels, 
-                    a=1.0, b=1.0, sigmoid=False,
+                    a=a, b=b, sigmoid=False,
                     train=True, subgraph=sg, scope='PointwiseMSE')
 
     @r.T.OptimizerGraph([])
@@ -73,12 +73,12 @@ def PMF(batch_size, dim_embed, max_user, max_item, l2_reg=None,
         item_bias = sg.super.ItemGraph.get('item_bias')
 
         PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
-                    item_bias=item_bias, a=1.0, b=1.0, sigmoid=False,
+                    item_bias=item_bias, a=a, b=b, sigmoid=False,
                     train=False, subgraph=sg, scope='PointwiseMSE')
     
     return r.build()
 
-def InferPMF(dim_embed, max_item, l2_reg=None,
+def InferPMF(dim_embed, max_item, a=1.0, b=0.01, l2_reg=None,
     init_model_dir=None, save_model_dir=None, training=True, serving=False):
     
     r = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
@@ -127,7 +127,7 @@ def InferPMF(dim_embed, max_item, l2_reg=None,
         item_bias = sg.super.ItemGraph.get('item_bias')
         labels = sg.super.InputGraph.get('labels')
         PointwiseMSE(user_vec=user_vec, item_vec=item_vec,
-                    item_bias=item_bias, labels=labels, a=1.0, b=0.25, sigmoid=False,
+                    item_bias=item_bias, labels=labels, a=a, b=b, sigmoid=False,
                     train=True, subgraph=sg, scope='PointwiseMSE')
     
     return r.build()

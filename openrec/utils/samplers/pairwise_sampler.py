@@ -21,9 +21,9 @@ class _PairwiseSampler(Process):
     def run(self):
         while True:
             
-            input_npy = np.zeros(self._batch_size, dtype=[('user_id_input', np.int32),
-                                                        ('p_item_id_input', np.int32),
-                                                        ('n_item_id_input', np.int32)])
+            input_npy = np.zeros(self._batch_size, dtype=[('user_id', np.int32),
+                                                        ('p_item_id', np.int32),
+                                                        ('n_item_id', np.int32)])
 
             if self._state + self._batch_size >= len(self._dataset.data):
                 if not self._chronological:

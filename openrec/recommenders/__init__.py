@@ -1,7 +1,6 @@
 from openrec.recommenders.recommender import Recommender
-# from openrec.recommenders.bpr import BPR
+from openrec.recommenders.bpr import BPR
 from openrec.recommenders.pmf import PMF
-from openrec.recommenders.pmf import InferPMF
 # from openrec.recommenders.nbpr import NBPR
 # from openrec.recommenders.concat_visual_bpr import ConcatVisualBPR
 # from openrec.recommenders.visual_pmf import VisualPMF

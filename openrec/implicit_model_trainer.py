@@ -46,6 +46,8 @@ class ImplicitModelTrainer(object):
         self._max_item = self._train_dataset.max_item()
 
         self._model = model
+        if not self._model.isbuilt():
+            self._model.build()
         self._sampler = sampler
 
     def train(self, num_itr, display_itr, eval_datasets=[], evaluators=[], num_negatives=None, seed=10):

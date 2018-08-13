@@ -2,14 +2,14 @@ import tensorflow as tf
 # from openrec.modules.extractions import Extraction
 
 def LatentFactor(ids, shape, l2_reg=None, init='normal', 
-                subgraph=None, scope=None, reuse=False):
+                subgraph=None, scope=None):
 
     if init == 'normal':
         initializer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01, dtype=tf.float32)
     elif init == 'zero':
         initializer = tf.constant_initializer(value=0.0, dtype=tf.float32)
 
-    with tf.variable_scope(scope, default_name='LatentFactor', reuse=reuse):
+    with tf.variable_scope(scope, default_name='LatentFactor', reuse=tf.AUTO_REUSE):
         embedding = tf.get_variable('embedding', shape=shape, trainable=True,
                                       initializer=initializer)
         output = tf.nn.embedding_lookup(embedding, ids)

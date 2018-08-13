@@ -136,6 +136,7 @@ class Recommender(object):
         self._init_model_dir = init_model_dir
         self._save_model_dir = save_model_dir
         self._flag_updated = False
+        self._flag_isbuilt = False
         
         self.TrainingGraph = _RecommenderGraph()
         self.ServingGraph = _RecommenderGraph()
@@ -153,6 +154,8 @@ class Recommender(object):
     def train(self, batch_data, input_mapping_id='default', train_ops_id='default', losses_id='default', outputs_id='default'):
 
         assert self._training, "Training is disabled"
+        assert self._flag_isbuilt, "Training graph is not built"
+        
         feed_dict = self._generate_feed_dict(batch_data, 
                                             self.T.get_input_mapping(input_mapping_id))
         train_ops = self.T.get_train_ops(train_ops_id)
@@ -179,6 +182,7 @@ class Recommender(object):
     def serve(self, batch_data, input_mapping_id='default', losses_id='default', outputs_id='default'):
 
         assert self._serving, "Serving is disabled"
+        assert self._flag_isbuilt, "Serving graph is not built"
         
         if self._flag_updated:
             self._save_and_load_for_serving()
@@ -261,5 +265,11 @@ class Recommender(object):
             self.restore(save_model_dir=self._init_model_dir,
                         restore_training=self._training,
                         restore_serving=self._serving)
-
+        
+        self._flag_isbuilt = True
+        
         return self
+    
+    def isbuilt(self):
+        
+        return self._flag_isbuilt

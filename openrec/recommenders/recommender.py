@@ -135,6 +135,7 @@ class Recommender(object):
         self._serving = serving
         self._init_model_dir = init_model_dir
         self._save_model_dir = save_model_dir
+        
         self._flag_updated = False
         self._flag_isbuilt = False
         
@@ -200,12 +201,14 @@ class Recommender(object):
 
         return {'losses': results[:len(losses)], 'outputs': results[len(losses):]}
     
-    def save(self, save_model_dir=None):
+    def save(self, save_model_dir=None, global_step=None):
         
         if save_model_dir is None:
             save_model_dir = self._save_model_dir
         with self.TrainingGraph.tf_graph.as_default():
-            self._tf_training_saver.save(self._tf_training_sess, os.path.join(save_model_dir, 'model.ckpt'))
+            self._tf_training_saver.save(self._tf_training_sess, 
+                                         os.path.join(save_model_dir, 'model.ckpt'),
+                                        global_step=global_step)
     
     def restore(self, save_model_dir=None, restore_training=False, restore_serving=False):
         
@@ -252,14 +255,14 @@ class Recommender(object):
             with self.TrainingGraph.tf_graph.as_default():
                 self._tf_training_sess = tf.Session()
                 self._tf_training_sess.run(tf.global_variables_initializer())
-                self._tf_training_saver = tf.train.Saver(tf.global_variables())
+                self._tf_training_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
 
         if self._serving:
             self.ServingGraph.build()
             with self.ServingGraph.tf_graph.as_default():
                 self._tf_serving_sess = tf.Session()
                 self._tf_serving_sess.run(tf.global_variables_initializer())
-                self._tf_serving_saver = tf.train.Saver(tf.global_variables())
+                self._tf_serving_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
         
         if self._init_model_dir is not None:
             self.restore(save_model_dir=self._init_model_dir,

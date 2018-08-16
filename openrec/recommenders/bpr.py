@@ -3,7 +3,7 @@ from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import PairwiseLog
 import tensorflow as tf
 
-def BPR(batch_size, dim_embed, max_user, max_item, l2_reg=None,
+def BPR(batch_size, dim_embed, total_users, total_items, l2_reg=None,
     init_model_dir=None, save_model_dir='Recommender/', training=True, serving=False):
     
     rec = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
@@ -36,22 +36,22 @@ def BPR(batch_size, dim_embed, max_user, max_item, l2_reg=None,
     @rec.ServingGraph.UserGraph(['user_vec'])
     def user_graph(subgraph):
         user_id = subgraph.super.InputGraph.get('user_id')
-        _, user_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=user_id,
-                    shape=[max_user, dim_embed], scope='user')
+        _, user_vec = LatentFactor(l2_reg=l2_reg, init='normal', id_=user_id,
+                    shape=[total_users, dim_embed], scope='user')
         subgraph.set('user_vec', user_vec)
 
     @rec.TrainingGraph.ItemGraph(['p_item_vec', 'p_item_bias', 'n_item_vec', 'n_item_bias'])
     def training_item_graph(subgraph):
         p_item_id = subgraph.super.InputGraph.get('p_item_id')
         n_item_id = subgraph.super.InputGraph.get('n_item_id')
-        _, p_item_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=p_item_id,
-                    shape=[max_item, dim_embed], subgraph=subgraph, scope='item')
-        _, p_item_bias = LatentFactor(l2_reg=l2_reg, init='zero', ids=p_item_id,
-                    shape=[max_item, 1], subgraph=subgraph, scope='item_bias')
-        _, n_item_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=n_item_id,
-                    shape=[max_item, dim_embed], subgraph=subgraph, scope='item')
-        _, n_item_bias = LatentFactor(l2_reg=l2_reg, init='zero', ids=n_item_id,
-                    shape=[max_item, 1], subgraph=subgraph, scope='item_bias')
+        _, p_item_vec = LatentFactor(l2_reg=l2_reg, init='normal', id_=p_item_id,
+                    shape=[total_items, dim_embed], subgraph=subgraph, scope='item')
+        _, p_item_bias = LatentFactor(l2_reg=l2_reg, init='zero', id_=p_item_id,
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
+        _, n_item_vec = LatentFactor(l2_reg=l2_reg, init='normal', id_=n_item_id,
+                    shape=[total_items, dim_embed], subgraph=subgraph, scope='item')
+        _, n_item_bias = LatentFactor(l2_reg=l2_reg, init='zero', id_=n_item_id,
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
         subgraph.set('p_item_vec', p_item_vec)
         subgraph.set('p_item_bias', p_item_bias)
         subgraph.set('n_item_vec', n_item_vec)
@@ -60,10 +60,10 @@ def BPR(batch_size, dim_embed, max_user, max_item, l2_reg=None,
     @rec.ServingGraph.ItemGraph(['item_vec', 'item_bias'])
     def serving_item_graph(subgraph):
         item_id = subgraph.super.InputGraph.get('item_id')
-        _, item_vec = LatentFactor(l2_reg=l2_reg, init='normal', ids=item_id,
-                    shape=[max_item, dim_embed], subgraph=subgraph, scope='item')
-        _, item_bias = LatentFactor(l2_reg=l2_reg, init='zero', ids=item_id,
-                    shape=[max_item, 1], subgraph=subgraph, scope='item_bias')
+        _, item_vec = LatentFactor(l2_reg=l2_reg, init='normal', id_=item_id,
+                    shape=[total_items, dim_embed], subgraph=subgraph, scope='item')
+        _, item_bias = LatentFactor(l2_reg=l2_reg, init='zero', id_=item_id,
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
         subgraph.set('item_vec', item_vec)
         subgraph.set('item_bias', item_bias)
 

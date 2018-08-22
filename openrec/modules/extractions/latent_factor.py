@@ -17,6 +17,6 @@ def LatentFactor(shape, id_=None, l2_reg=None, init='normal',
             output = tf.nn.embedding_lookup(embedding, id_)
         
         if l2_reg is not None:
-            subgraph.super.register_loss(l2_reg * tf.nn.l2_loss(output))
+            subgraph.register_global_loss(l2_reg * tf.nn.l2_loss(output))
 
     return embedding, output

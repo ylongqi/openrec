@@ -60,16 +60,18 @@ class ImplicitModelTrainer(object):
         
         acc_loss = 0
         self._eval_manager = ImplicitEvalManager(evaluators=evaluators)
-
+        
+        print(colored('[Training starts, total_it: %d, eval_it: %d, save_it: %d]' \
+                          % (total_it, eval_it, save_it), 'blue'))
+        
         for it in range(total_it):
             batch_data = train_sampler.next_batch()
             loss = self._train_it_func(self._model, batch_data)
             acc_loss += loss
             self._trained_it += 1
-            
             if (it + 1) % save_it == 0:
                 self._model.save(global_step=self._trained_it)
-                print('[It %d] Model saved.' % (self._trained_it))
+                print(colored('[it %d]' % self._trained_it, 'red'), 'Model saved.')
             if (it + 1) % eval_it == 0:
                 print(colored('[it %d]' % self._trained_it, 'red'), 'loss: %f' % (acc_loss/eval_it))
                 for sampler in eval_samplers:

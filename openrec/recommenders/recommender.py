@@ -1,64 +1,144 @@
 import tensorflow as tf
 import numpy as np
-import os
-
+import os    
+    
 class _RecommenderGraph(object):
 
     class _SubGraph(object):
+        
+        class _Port(object):
+            
+            def __init__(self):
+                self.s = None
+        
+        class _InPort(_Port):
+            
+            def assign(self, subgraph, key):
+                self.s = {'subgraph':subgraph, 'key':key}
+            
+            def retrieve(self):
+                if self.s is None:
+                    return None
+                else:
+                    return self.s['subgraph'][self.s['key']]
+        
+        class _OutPort(_Port):
+            
+            def assign(self, tensor):
+                self.s = tensor
+            
+            def retrieve(self):
+                return self.s
 
         def __init__(self, rec_graph):
 
             self.super = rec_graph
-            self._tensor_store = dict()
+            self._port_store = dict()
             self._build_funcs = []
+            self._build_mode = False
             self._is_built = False
-
-        def __call__(self, keys):
-            for key in keys:
-                self._tensor_store[key] = None
-            def assign_build_func(build_func):
-                self._build_funcs = [build_func]
-                return build_func
-            return assign_build_func
-
-        def add(self, keys):
-            for key in keys:
-                self._tensor_store[key] = None
+            
+        def __getitem__(self, key):
+            
+            assert key in self._port_store, "%s port is not found." % key
+            if self._build_mode:
+                if not self._is_built:
+                    self.build()
+                    self._is_built = True
+                return self._port_store[key].retrieve()
+            else:
+                assert isinstance(self._port_store[key], self._OutPort), "[Connect Error] Getting a value from the %s in-port" % key
+                return self, key
+        
+        def __setitem__(self, key, value):
+            
+            assert key in self._port_store, "%s port is not found." % key
+            if self._build_mode:
+                assert isinstance(self._port_store[key], self._OutPort), "[Build Error] Assigning a value to the %s in-port" % key
+                self._port_store[key].assign(value)
+            else:
+                assert isinstance(self._port_store[key], self._InPort), "[Connect Error] Assigning a value to the %s out-port" % key
+                self._port_store[key].assign(value[0], value[1])
+                
+        def __call__(self, ins=[], outs=[]):
+            
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
             def add_build_func(build_func):
-                self._build_funcs.append(build_func)
+                self._build_funcs = [build_func]
                 return build_func
             return add_build_func
 
+#         def ins(self, *keys):
+            
+#             for key in keys:
+#                 self._port_store[key] = self._InPort()
+#             return self
+            
+#         def outs(self, *keys):
+            
+#             for key in keys:
+#                 self._port_store[key] = self._OutPort()
+#             return self
+            
+        def add(self, ins=[], outs=[]):
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            def add_build_func(build_func):
+                self._build_funcs.append(build_func)
+                return build_func
+            return build_func
+        
+        def ready(self):
+            
+            self._build_mode = True
+            
         def build(self):
             if not self._is_built:
+                self._is_built = True
                 for build_func in self._build_funcs:
                     build_func(self)
-                self._is_built = True
+        
+        def register_global_input_mapping(self, input_mapping, identifier='default'):
 
-        def copy(self, sub_graph):
-            self._build_funcs = sub_graph.build_funcs
-            self._tensor_store = sub_graph.tensor_store.copy()
+            self.super.register_input_mapping(input_mapping, identifier)
 
-        @property
-        def tensor_store(self):
-            return self._tensor_store
+        def register_global_train_op(self, train_op, identifier='default'):
+            
+            self.super.register_train_op(train_op, identifier)
 
-        @property
-        def build_funcs(self):
-            return self._build_funcs
+        def register_global_loss(self, loss, identifier='default'):
 
-        def set(self, key, value):
-            assert key in self._tensor_store, "\"%s\" Tensor is not registered" % key
-            self._tensor_store[key] = value
+            self.super.register_loss(loss, identifier)
 
-        def get(self, key):
-            assert key in self._tensor_store, "\"%s\" Tensor is not registered" % key
-            if not self._is_built:
-                self._build_func(self)
-                self._is_built = True
-            assert self._tensor_store[key] is not None, "Registered \"%s\" Tensor is not defined" % key
-            return self._tensor_store[key]
+        def register_global_output(self, output, identifier='default'):
+            
+            self.super.register_output(output, identifier)
+        
+        def get_global_input_mapping(self, identifier='default'):
 
+            self.super.get_input_mapping(identifier)
+
+        def get_global_train_ops(self, identifier='default'):
+
+            return self.super.get_train_ops(identifier)
+
+        def get_global_losses(self, identifier='default'):
+
+            return self.super.get_losses(identifier)
+            
+        def get_global_outputs(self, identifier='default'):
+
+            return self.super.get_outputs(identifier)
+            
     def __init__(self):
         
         self._tf_graph = tf.Graph()
@@ -101,6 +181,14 @@ class _RecommenderGraph(object):
     def build(self):
 
          with self._tf_graph.as_default():
+            
+            self.InputGraph.ready()
+            self.UserGraph.ready()
+            self.ItemGraph.ready()
+            self.FusionGraph.ready()
+            self.InteractionGraph.ready()
+            self.OptimizerGraph.ready()
+            
             self.InputGraph.build()
             self.UserGraph.build()
             self.ItemGraph.build()

@@ -16,9 +16,9 @@ def PairwiseLog(user_vec, subgraph, item_vec=None, item_bias=None, p_item_vec=No
         loss = - tf.reduce_sum(tf.log(tf.sigmoid(tf.maximum(dot_user_pos + p_item_bias -
                                                             dot_user_neg - n_item_bias,
                                                                   -30.0))))
-        subgraph.super.register_loss(loss)
+        subgraph.register_global_loss(loss)
     else:
         predictions = tf.reduce_sum(tf.multiply(user_vec, item_vec),
                                     reduction_indices=1,
                                     keepdims=False) + tf.reshape(item_bias, [-1])
-        subgraph.super.register_output(predictions)
+        subgraph.register_global_output(predictions)

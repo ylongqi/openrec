@@ -15,12 +15,12 @@ def PairwiseEuDist(user_vec, subgraph, item_vec=None, item_bias=None, p_item_vec
         neg_score = (-l2_user_neg) + n_item_bias
         diff = pos_score - neg_score
         loss = tf.reduce_sum(weights * tf.maximum(margin - diff, 0))
-        subgraph.super.register_loss(loss)
+        subgraph.register_global_loss(loss)
     else:
         predictions = -tf.reduce_sum(tf.square(tf.subtract(user_vec, item_vec)),
                                         reduction_indices=1,
                                         keepdims=True, name="l2_user_pos") + item_bias
-        subgraph.super.register_output(predictions)
+        subgraph.register_global_output(predictions)
 
 
 # class PairwiseEuDist(PairwiseLog):

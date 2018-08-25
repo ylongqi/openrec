@@ -10,10 +10,10 @@ import pickle
 
 class ImplicitModelTrainer(object):
 
-    def __init__(self, model, serving_batch_size, train_it_func=None, eval_it_func=None):
+    def __init__(self, model, train_it_func=None, eval_it_func=None):
 
         self._model = model
-        self._serving_batch_size = serving_batch_size
+        # self._serve_batch_size = serve_batch_size
         if not self._model.isbuilt():
             self._model.build()
         
@@ -41,18 +41,20 @@ class ImplicitModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
         
-        pos_items, user_data = eval_sampler.next_batch()
-        while user_data is not None:
-            
-            scores = []
-            for batch_ind in range(int(math.ceil(float(len(user_data)) / self._serving_batch_size))):
-                scores.append(self._eval_it_func(self._model, user_data[batch_ind*self._serving_batch_size:(batch_ind+1)*self._serving_batch_size]))
-            result = self._eval_manager.full_eval(pos_samples=pos_items,
+        pos_items, batch_data = eval_sampler.next_batch()
+        while batch_data is not None:
+            all_scores = []
+            all_pos_items = []
+            while len(batch_data) > 0:
+                all_scores.append(self._eval_it_func(self._model, batch_data))
+                all_pos_items += pos_items
+                pos_items, batch_data = eval_sampler.next_batch()
+            result = self._eval_manager.full_eval(pos_samples=all_pos_items,
                                                   excl_pos_samples=[],
-                                                predictions=np.concatenate(scores, axis=0))
+                                                predictions=np.concatenate(all_scores, axis=0))
             for key in result:
                 metric_results[key].append(result[key])
-            pos_items, user_data = eval_sampler.next_batch()
+            pos_items, batch_data = eval_sampler.next_batch()
             
         return metric_results
 

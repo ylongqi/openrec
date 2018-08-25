@@ -5,7 +5,7 @@ from openrec.utils.samplers import Sampler
 def RandomPointwiseSampler(dataset, batch_size, num_process=5, seed=100):
     
     random.seed(seed)
-    def batch(dataset, batch_size=batch_size, seed=seed):
+    def batch(dataset, batch_size=batch_size):
         
         while True:
             input_npy = np.zeros(batch_size, dtype=[('user_id', np.int32),

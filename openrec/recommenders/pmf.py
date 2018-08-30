@@ -69,7 +69,7 @@ def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         subgraph.register_global_operation(optimizer.minimize(losses))
     
-    @t.connect
+    @t.connector
     def train_connect(graph):
         graph.usergraph['user_id'] = graph.inputgraph['user_id']
         graph.itemgraph['item_id'] = graph.inputgraph['item_id']
@@ -78,7 +78,7 @@ def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=
         graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
         graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
     
-    @s.connect
+    @s.connector
     def serve_connect(graph):
         graph.usergraph['user_id'] = graph.inputgraph['user_id']
         graph.itemgraph['item_id'] = graph.inputgraph['item_id']

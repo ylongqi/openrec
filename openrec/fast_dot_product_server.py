@@ -17,7 +17,7 @@ def _FastDotProductRecommender(batch_size, dim_embed, total_users, total_items):
               train=False, serve=True)
     s = rec.servegraph
     
-    @s.inputgraph(outs=['user_lf_cache', 'item_lf_cache', 'item_bias_cache'], overwrite=False)
+    @s.inputgraph.extend(outs=['user_lf_cache', 'item_lf_cache', 'item_bias_cache'])
     def _add_input(subgraph):
         subgraph['user_lf_cache'] = tf.placeholder(tf.float32, shape=[total_users, dim_embed], 
                                                    name='user_lf_cache')
@@ -30,13 +30,13 @@ def _FastDotProductRecommender(batch_size, dim_embed, total_users, total_items):
                                                 'item_lf_cache': subgraph['item_lf_cache'],
                                                 'item_bias_cache': subgraph['item_bias_cache']}, 'cache')
     
-    @s.usergraph(ins=['user_lf_cache'], overwrite=False)
+    @s.usergraph.extend(ins=['user_lf_cache'])
     def _add_usergraph(subgraph):
         user_embedding, _ = LatentFactor(id_=None, shape=[total_users, dim_embed], 
                                          subgraph=subgraph, scope='user')
         subgraph.register_global_operation(tf.assign(user_embedding, subgraph['user_lf_cache']), 'cache')
     
-    @s.itemgraph(ins=['item_lf_cache', 'item_bias_cache'], overwrite=False)
+    @s.itemgraph.extend(ins=['item_lf_cache', 'item_bias_cache'])
     def _add_itemgraph(subgraph):
         item_embedding, _ = LatentFactor(id_=None, shape=[total_items, dim_embed], 
                                          subgraph=subgraph, scope='item')
@@ -45,7 +45,7 @@ def _FastDotProductRecommender(batch_size, dim_embed, total_users, total_items):
         subgraph.register_global_operation(tf.assign(item_embedding, subgraph['item_lf_cache']), 'cache')
         subgraph.register_global_operation(tf.assign(item_bias_embedding, subgraph['item_bias_cache']), 'cache')
     
-    @s.connect(overwrite=False)
+    @s.connector.extend
     def _add_connect(graph):
         graph.usergraph['user_lf_cache'] = graph.inputgraph['user_lf_cache']
         graph.itemgraph['item_lf_cache'] = graph.inputgraph['item_lf_cache']

@@ -81,7 +81,7 @@ def BPR(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l2
                     item_bias=subgraph['item_bias'], 
                     train=False, subgraph=subgraph, scope='PairwiseLog')
     
-    @t.connect
+    @t.connector
     def train_connect(graph):
         graph.usergraph['user_id'] = graph.inputgraph['user_id']
         graph.itemgraph['p_item_id'] = graph.inputgraph['p_item_id']
@@ -92,7 +92,7 @@ def BPR(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l2
         graph.interactiongraph['p_item_bias'] = graph.itemgraph['p_item_bias']
         graph.interactiongraph['n_item_bias'] = graph.itemgraph['n_item_bias']
     
-    @s.connect
+    @s.connector
     def serve_connect(graph):
         graph.usergraph['user_id'] = graph.inputgraph['user_id']
         graph.itemgraph['item_id'] = graph.inputgraph['item_id']

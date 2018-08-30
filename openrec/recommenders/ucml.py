@@ -26,7 +26,7 @@ def UCML(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l
         norm = tf.sqrt(tf.reduce_sum(tf.square(embedding_gather), axis=1, keepdims=True))
         return tf.scatter_update(embedding, indices=unique_censor_id, updates=embedding_gather / tf.maximum(norm, 1.0))
         
-    @t.usergraph(overwrite=False)
+    @t.usergraph.extend
     def censor_user_vec(subgraph):
         user_embedding, _ = LatentFactor(l2_reg=None, 
                                          init='normal', 
@@ -36,7 +36,7 @@ def UCML(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l
         user_censor_ops = censor_vec(user_embedding, subgraph['user_id'])
         subgraph.register_global_operation(user_censor_ops, 'censor_embedding')
     
-    @t.itemgraph(overwrite=False)
+    @t.itemgraph.extend
     def censor_item_vec(subgraph):
         item_embedding, _ = LatentFactor(l2_reg=None, 
                                          init='normal', 

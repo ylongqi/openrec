@@ -58,14 +58,32 @@ class _RecommenderGraph(object):
                 assert isinstance(self._port_store[key], self._InPort), "[Connect Error] Assigning a value to the %s out-port" % key
                 self._port_store[key].assign(value[0], value[1])
                 
-        def __call__(self, build_func=None, ins=[], outs=[], overwrite=True):
+        def __call__(self, build_func=None, ins=[], outs=[]):
             
             assert isinstance(ins, list), "ins should be a list of strings."
             assert isinstance(outs, list), "outs should be a list of strings"
             
-            if overwrite:
-                self._port_store = {}
-                self._build_funcs = []
+            self._port_store = {}
+            self._build_funcs = []
+            
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            if build_func is None:
+                def add_build_func(build_func):
+                    self._build_funcs.append(build_func)
+                    return build_func
+                return add_build_func
+            else:
+                self._build_funcs.append(build_func)
+                return build_func
+        
+        def extend(self, build_func=None, ins=[], outs=[]):
+            
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
             
             for in_ in ins:
                 self._port_store[in_] = self._InPort()
@@ -134,6 +152,42 @@ class _RecommenderGraph(object):
         def get_global_outputs(self, identifier='default'):
 
             return self._super.get_outputs(identifier)
+    
+    class _Connector(object):
+        
+        def __init__(self, global_graph):
+            
+            self._global_graph = global_graph
+            self._connect_funcs = []
+        
+        def __call__(self, connect_func=None):
+            
+            self._connect_funcs = []
+            if connect_func is None:
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def extend(self, connect_func=None):
+            
+            if connect_func is None:
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def build(self):
+            
+            assert len(self._connect_funcs) > 0, "Graph connection is not specified"
+            for connect_func in self._connect_funcs:
+                connect_func(self._global_graph)
             
     def __init__(self):
         
@@ -146,12 +200,12 @@ class _RecommenderGraph(object):
         self.interactiongraph = self._SubGraph(self)
         self.optimizergraph = self._SubGraph(self)
 
+        self.connector = self._Connector(self)
+        
         self._operation_identifier_set = set()
         self._loss_identifier_set = set()
         self._output_identifier_set = set()
         self._input_mapping_dict = dict()
-        
-        self._connect_funcs = []
     
     def __setattr__(self, name, value):
         
@@ -189,15 +243,14 @@ class _RecommenderGraph(object):
     
     @property
     def tf_graph(self):
+        
         return self._tf_graph
 
     def build(self):
 
          with self._tf_graph.as_default():
             
-            assert len(self._connect_funcs)>0, "Graph connection is not specified"
-            for connect_func in self._connect_funcs:
-                connect_func(self)
+            self.connector.build()
                 
             self.inputgraph.ready()
             self.usergraph.ready()
@@ -221,20 +274,6 @@ class _RecommenderGraph(object):
                 self.interactiongraph.build()
             with tf.variable_scope('optimizergraph', reuse=tf.AUTO_REUSE):  
                 self.optimizergraph.build()
-    
-    def connect(self, connect_func=None, overwrite=True):
-
-        if overwrite:
-            self._connect_funcs = []
-
-        if connect_func is None:
-            def add_connect_func(connect_func):
-                self._connect_funcs.append(connect_func)
-                return connect_func
-            return add_connect_func
-        else:
-            self._connect_funcs.append(connect_func)
-            return connect_func
         
     def get_input_mapping(self, identifier='default'):
 

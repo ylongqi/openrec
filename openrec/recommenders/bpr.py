@@ -1,146 +1,103 @@
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import PairwiseLog
+import tensorflow as tf
 
-class BPR(Recommender):
-
-    """
-    Pure Baysian Personalized Ranking (BPR) [1]_ based Recommender
-
-    Parameters
-    ----------
-    batch_size: int
-        Training batch size. Each training instance consists of 
-        an user, a positive item, and a negative item.
-    max_user: int
-        Maximum number of users in the recommendation system.
-    max_item: int
-        Maximum number of items in the recommendation system.
-    dim_embed: int
-        Dimensionality of the user/item embedding.
-    test_batch_size: int, optional
-        Batch size for testing and serving. Each testing/serving bacth consists of
-        an user.
-    l2_reg: float, optional
-        Weight for L2 regularization, i.e., weight decay.
-    opt: 'SGD'(default) or 'Adam', optional
-        Optimization algorithm, SGD: Stochastic Gradient Descent.
-    lr: float, optional
-        Initial learning rate.
-    init_dict: dict, optional
-        Key-value pairs for inital parameter values.
-    sess_config: tensorflow.ConfigProto(), optional
-        Tensorflow session configuration.
-
-    Notes  
-    -----
-    BPR recommender is trained on users' implicit feedback signals (e.g., clicks and views). The items 
-    clicked or viewed are treated as positive items, and otherwise as negative items. The pure BPR
-    recommender does not consider any other auxiliary signals.
-
-    References
-    ----------
-    .. [1] Rendle, S., Freudenthaler, C., Gantner, Z. and Schmidt-Thieme, L., 2009, June. 
-        BPR: Bayesian personalized ranking from implicit feedback. In Proceedings of the 
-        twenty-fifth conference on uncertainty in artificial intelligence (pp. 452-461). AUAI Press.
-    """
-
-    def __init__(self, batch_size, max_user, max_item, dim_embed, 
-        test_batch_size=None, l2_reg=None, opt='SGD', lr=None, init_dict=None, sess_config=None):
-
-        self._dim_embed = dim_embed
-
-        super(BPR, self).__init__(batch_size=batch_size, 
-                                  test_batch_size=test_batch_size,
-                                  max_user=max_user, 
-                                  max_item=max_item, 
-                                  l2_reg=l2_reg,
-                                  opt=opt,
-                                  lr=lr,
-                                  init_dict=init_dict,
-                                  sess_config=sess_config)
-
-    def _input_mappings(self, batch_data, train):
-
-        if train:
-            return {self._get_input('user_id'): batch_data['user_id_input'],
-                    self._get_input('p_item_id'): batch_data['p_item_id_input'],
-                    self._get_input('n_item_id'): batch_data['n_item_id_input']}
-        else:
-            return {self._get_input('user_id', train=train): batch_data['user_id_input'],
-                    self._get_input('item_id', train=train): batch_data['item_id_input']}
-
-    def _build_user_inputs(self, train=True):
+def BPR(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l2_reg=None,
+    init_model_dir=None, save_model_dir='Recommender/', train=True, serve=False):
+    
+    rec = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
+                    train=train, serve=serve)
+    
+    t = rec.traingraph
+    s = rec.servegraph
+    
+    @t.inputgraph(outs=['user_id', 'p_item_id', 'n_item_id'])
+    def train_input_graph(subgraph):
+        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[batch_size], name='user_id')
+        subgraph['p_item_id'] = tf.placeholder(tf.int32, shape=[batch_size], name='p_item_id')
+        subgraph['n_item_id'] = tf.placeholder(tf.int32, shape=[batch_size], name='n_item_id')
         
-        if train:
-            self._add_input(name='user_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='user_id', dtype='int32', shape=[self._test_batch_size], train=False)
+        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
+                            'p_item_id': subgraph['p_item_id'],
+                            'n_item_id': subgraph['n_item_id']})
 
-    def _build_item_inputs(self, train=True):
-
-        if train:
-            self._add_input(name='p_item_id', dtype='int32', shape=[self._batch_size])
-            self._add_input(name='n_item_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
-
-    def _build_user_extractions(self, train=True):
+    @s.inputgraph(outs=['user_id', 'item_id'])
+    def serve_input_graph(subgraph):
+        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[None], name='user_id')
+        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[None], name='item_id')
         
-        self._add_module('user_vec', 
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('user_id', train=train),
-                                    shape=[self._max_user, self._dim_embed], scope='user', reuse=not train), 
-                         train=train)
+        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
+                                'item_id': subgraph['item_id']})
 
-    def _build_item_extractions(self, train=True):
+    @t.usergraph(outs=['user_vec'], ins=['user_id'])
+    @s.usergraph(outs=['user_vec'], ins=['user_id'])
+    def user_graph(subgraph):
+        _, subgraph['user_vec'] = LatentFactor(l2_reg=l2_reg, 
+                                   init='normal', 
+                                   id_=subgraph['user_id'],
+                                   shape=[total_users, dim_user_embed], 
+                                    subgraph=subgraph,
+                                   scope='user')
 
-        if train:
-            self._add_module('p_item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('p_item_id', train=train),
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=False), 
-                         train=True)
-            self._add_module('p_item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('p_item_id', train=train),
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=False), 
-                         train=True)
-            self._add_module('n_item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('n_item_id', train=train),
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=True), 
-                         train=True)
-            self._add_module('n_item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('n_item_id', train=train),
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=True), 
-                         train=True)
-        else:
-            self._add_module('item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=True), 
-                         train=False)
-            self._add_module('item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=True), 
-                         train=False)
-
-    def _build_default_interactions(self, train=True):
-
-        if train:
-            self._add_module('interaction',
-                            PairwiseLog(user=self._get_module('user_vec').get_outputs()[0], 
-                                    p_item=self._get_module('p_item_vec').get_outputs()[0],
-                                    n_item=self._get_module('n_item_vec').get_outputs()[0], 
-                                    p_item_bias=self._get_module('p_item_bias').get_outputs()[0],
-                                    n_item_bias=self._get_module('n_item_bias').get_outputs()[0], 
-                                    scope='pairwise_log', reuse=False, train=True),
-                            train=True)
-        else:
-            self._add_module('interaction',
-                            PairwiseLog(user=self._get_module('user_vec', train=train).get_outputs()[0],
-                                        item=self._get_module('item_vec', train=train).get_outputs()[0], 
-                                        item_bias=self._get_module('item_bias', train=train).get_outputs()[0],
-                                        scope='pairwise_log', reuse=True, train=False),
-                            train=False)
-
-    def _build_serving_graph(self):
+    @t.itemgraph(outs=['p_item_vec', 'p_item_bias', 'n_item_vec', 'n_item_bias'],
+                ins=['p_item_id', 'n_item_id'])
+    def train_item_graph(subgraph):
+        _, subgraph['p_item_vec'] = LatentFactor(l2_reg=l2_reg, init='normal', id_=subgraph['p_item_id'],
+                    shape=[total_items, dim_item_embed], subgraph=subgraph, scope='item')
+        _, subgraph['p_item_bias'] = LatentFactor(l2_reg=l2_reg, init='zero', id_=subgraph['p_item_id'],
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
+        _, subgraph['n_item_vec'] = LatentFactor(l2_reg=l2_reg, init='normal', id_=subgraph['n_item_id'],
+                    shape=[total_items, dim_item_embed], subgraph=subgraph, scope='item')
+        _, subgraph['n_item_bias'] = LatentFactor(l2_reg=l2_reg, init='zero', id_=subgraph['n_item_id'],
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
         
-        super(BPR, self)._build_serving_graph()
-        self._scores = self._get_module('interaction', train=False).get_outputs()[0]
+    @s.itemgraph(outs=['item_vec', 'item_bias'], ins=['item_id'])
+    def serve_item_graph(subgraph):
+        _, subgraph['item_vec'] = LatentFactor(l2_reg=l2_reg, init='normal', id_=subgraph['item_id'],
+                    shape=[total_items, dim_item_embed], subgraph=subgraph, scope='item')
+        _, subgraph['item_bias'] = LatentFactor(l2_reg=l2_reg, init='zero', id_=subgraph['item_id'],
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
+
+    @t.interactiongraph(ins=['user_vec', 'p_item_vec', 'p_item_bias', 'n_item_vec', 'n_item_bias'])
+    def interaction_graph(subgraph):
+        PairwiseLog(user_vec=subgraph['user_vec'], 
+                    p_item_vec=subgraph['p_item_vec'], 
+                    n_item_vec=subgraph['n_item_vec'], 
+                    p_item_bias=subgraph['p_item_bias'], 
+                    n_item_bias=subgraph['n_item_bias'], 
+                    subgraph=subgraph, train=True, scope='PairwiseLog')
+
+    @t.optimizergraph
+    def optimizer_graph(subgraph):
+        losses = tf.add_n(subgraph.get_global_losses())
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        subgraph.register_global_operation(optimizer.minimize(losses))
+
+    @s.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias'])
+    def serve_interaction_graph(subgraph):
+        PairwiseLog(user_vec=subgraph['user_vec'], 
+                    item_vec=subgraph['item_vec'],
+                    item_bias=subgraph['item_bias'], 
+                    train=False, subgraph=subgraph, scope='PairwiseLog')
+    
+    @t.connector
+    def train_connect(graph):
+        graph.usergraph['user_id'] = graph.inputgraph['user_id']
+        graph.itemgraph['p_item_id'] = graph.inputgraph['p_item_id']
+        graph.itemgraph['n_item_id'] = graph.inputgraph['n_item_id']
+        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
+        graph.interactiongraph['p_item_vec'] = graph.itemgraph['p_item_vec']
+        graph.interactiongraph['n_item_vec'] = graph.itemgraph['n_item_vec']
+        graph.interactiongraph['p_item_bias'] = graph.itemgraph['p_item_bias']
+        graph.interactiongraph['n_item_bias'] = graph.itemgraph['n_item_bias']
+    
+    @s.connector
+    def serve_connect(graph):
+        graph.usergraph['user_id'] = graph.inputgraph['user_id']
+        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
+        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
+        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
+        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
+    
+    return rec

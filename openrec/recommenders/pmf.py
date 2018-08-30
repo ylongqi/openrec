@@ -1,79 +1,89 @@
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor
 from openrec.modules.interactions import PointwiseMSE
+import tensorflow as tf
 
-class PMF(Recommender):
+def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=1.0, b=1.0, l2_reg=None,
+    init_model_dir=None, save_model_dir='Recommender/', train=True, serve=False):
 
-    def __init__(self, batch_size, dim_embed, max_user, max_item,
-                    test_batch_size=None, l2_reg=None, opt='SGD', sess_config=None):
-
-        self._dim_embed = dim_embed
-
-        super(PMF, self).__init__(batch_size=batch_size, 
-                                  test_batch_size=test_batch_size,
-                                  max_user=max_user, 
-                                  max_item=max_item, 
-                                  l2_reg=l2_reg,
-                                  opt=opt, sess_config=sess_config)
-
-    def _input_mappings(self, batch_data, train):
-
-        if train:
-            return {self._get_input('user_id'): batch_data['user_id_input'],
-                    self._get_input('item_id'): batch_data['item_id_input'],
-                    self._get_input('labels'): batch_data['labels']}
-        else:
-            return {self._get_input('user_id', train=False): batch_data['user_id_input'],
-                    self._get_input('item_id', train=False): batch_data['item_id_input']}
-
-    def _build_user_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='user_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='user_id', dtype='int32', shape=[None], train=False)
+    rec = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
+                    train=train, serve=serve)
     
-    def _build_item_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='item_id', dtype='int32', shape=[self._batch_size])
-        else:
-            self._add_input(name='item_id', dtype='int32', shape=[None], train=False)
+    t = rec.traingraph
+    s = rec.servegraph
     
-    def _build_extra_inputs(self, train=True):
-        
-        if train:
-            self._add_input(name='labels', dtype='float32', shape=[self._batch_size])
-
-    def _build_user_extractions(self, train=True):
-
-        self._add_module('user_vec', 
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('user_id', train=train),
-                                    shape=[self._max_user, self._dim_embed], scope='user', reuse=not train), 
-                         train=train)
+    @t.inputgraph(outs=['user_id', 'item_id', 'label'])
+    def train_input_graph(subgraph):
+        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[batch_size], name='user_id')
+        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[batch_size], name='item_id')
+        subgraph['label'] = tf.placeholder(tf.float32, shape=[batch_size], name='label')
+        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
+                            'item_id': subgraph['item_id'],
+                            'label': subgraph['label']})
     
-    def _build_item_extractions(self, train=True):
-        
-        self._add_module('item_vec',
-                         LatentFactor(l2_reg=self._l2_reg, init='normal', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, self._dim_embed], scope='item', reuse=not train), 
-                         train=train)
-        self._add_module('item_bias',
-                         LatentFactor(l2_reg=self._l2_reg, init='zero', ids=self._get_input('item_id', train=train),
-                                    shape=[self._max_item, 1], scope='item_bias', reuse=not train), 
-                         train=train)
+    @s.inputgraph(outs=['user_id', 'item_id'])
+    def serve_input_graph(subgraph):
+        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[None], name='user_id')
+        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[None], name='item_id')
+        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
+                                'item_id': subgraph['item_id']})
 
-    def _build_default_interactions(self, train=True):
+    @t.usergraph(ins=['user_id'], outs=['user_vec'])
+    @s.usergraph(ins=['user_id'], outs=['user_vec'])
+    def user_graph(subgraph):
+        _, subgraph['user_vec'] = LatentFactor(l2_reg=l2_reg, 
+                                               init='normal', 
+                                               id_=subgraph['user_id'],
+                                               shape=[total_users, dim_user_embed], 
+                                               subgraph=subgraph, 
+                                               scope='user')
+    
+    @t.itemgraph(ins=['item_id'], outs=['item_vec', 'item_bias'])
+    @s.itemgraph(ins=['item_id'], outs=['item_vec', 'item_bias'])
+    def item_graph(subgraph):
+        _, subgraph['item_vec'] = LatentFactor(l2_reg=l2_reg, init='normal', id_=subgraph['item_id'],
+                    shape=[total_items, dim_item_embed], subgraph=subgraph, scope='item')
+        _, subgraph['item_bias'] = LatentFactor(l2_reg=l2_reg, init='zero', id_=subgraph['item_id'],
+                    shape=[total_items, 1], subgraph=subgraph, scope='item_bias')
+    
+    @t.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias', 'label'])
+    def interaction_graph(subgraph):
+        PointwiseMSE(user_vec=subgraph['user_vec'], 
+                     item_vec=subgraph['item_vec'],
+                     item_bias=subgraph['item_bias'], 
+                     label=subgraph['label'], 
+                    a=a, b=b, sigmoid=False,
+                    train=True, subgraph=subgraph, scope='PointwiseMSE')
 
-        self._add_module('interaction',
-                        PointwiseMSE(user=self._get_module('user_vec', train=train).get_outputs()[0], 
-                                        item=self._get_module('item_vec', train=train).get_outputs()[0],
-                                        item_bias=self._get_module('item_bias', train=train).get_outputs()[0], 
-                                        labels=self._get_input('labels'), a=1.0, b=1.0, sigmoid=True, 
-                                        train=train, scope='PointwiseMSE', reuse=not train),
-                        train=train)
-
-    def _build_serving_graph(self):
-
-        super(PMF, self)._build_serving_graph()
-        self._scores = self._get_module('interaction', train=False).get_outputs()[0]
+    @s.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias'])
+    def serve_interaction_graph(subgraph):
+        PointwiseMSE(user_vec=subgraph['user_vec'], 
+                     item_vec=subgraph['item_vec'],
+                     item_bias=subgraph['item_bias'], 
+                     a=a, b=b, sigmoid=False,
+                    train=False, subgraph=subgraph, scope='PointwiseMSE')
+    
+    @t.optimizergraph
+    def optimizer_graph(subgraph):
+        losses = tf.add_n(subgraph.get_global_losses())
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        subgraph.register_global_operation(optimizer.minimize(losses))
+    
+    @t.connector
+    def train_connect(graph):
+        graph.usergraph['user_id'] = graph.inputgraph['user_id']
+        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
+        graph.interactiongraph['label'] = graph.inputgraph['label']
+        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
+        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
+        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
+    
+    @s.connector
+    def serve_connect(graph):
+        graph.usergraph['user_id'] = graph.inputgraph['user_id']
+        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
+        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
+        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
+        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
+    
+    return rec

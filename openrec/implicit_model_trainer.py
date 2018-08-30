@@ -41,6 +41,7 @@ class ImplicitModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
         
+        completed_user_count = 0
         pos_items, batch_data = eval_sampler.next_batch()
         while batch_data is not None:
             all_scores = []
@@ -52,6 +53,8 @@ class ImplicitModelTrainer(object):
             result = self._eval_manager.full_eval(pos_samples=all_pos_items,
                                                   excl_pos_samples=[],
                                                 predictions=np.concatenate(all_scores, axis=0))
+            completed_user_count += 1
+            print('...Evaluated %d users' % completed_user_count, end='\r')
             for key in result:
                 metric_results[key].append(result[key])
             pos_items, batch_data = eval_sampler.next_batch()
@@ -71,10 +74,13 @@ class ImplicitModelTrainer(object):
             loss = self._train_it_func(self._model, batch_data)
             acc_loss += loss
             self._trained_it += 1
+            print('..Trained for %d iterations.' % it, end='\r')
             if (it + 1) % save_it == 0:
                 self._model.save(global_step=self._trained_it)
+                print(' '*len('..Trained for %d iterations.' % it), end='\r')
                 print(colored('[it %d]' % self._trained_it, 'red'), 'Model saved.')
             if (it + 1) % eval_it == 0:
+                print(' '*len('..Trained for %d iterations.' % it), end='\r')
                 print(colored('[it %d]' % self._trained_it, 'red'), 'loss: %f' % (acc_loss/eval_it))
                 for sampler in eval_samplers:
                     print(colored('..(dataset: %s) evaluation' % sampler.name, 'green'))

@@ -107,9 +107,9 @@ class _RecommenderGraph(object):
             
             self._super.update_input_mapping(update_input_mapping, identifier)
 
-        def register_global_train_op(self, train_op, identifier='default'):
+        def register_global_operation(self, operation, identifier='default'):
             
-            self._super.register_train_op(train_op, identifier)
+            self._super.register_operation(operation, identifier)
 
         def register_global_loss(self, loss, identifier='default'):
 
@@ -123,9 +123,9 @@ class _RecommenderGraph(object):
 
             self._super.get_input_mapping(identifier)
 
-        def get_global_train_ops(self, identifier='default'):
+        def get_global_operations(self, identifier='default'):
 
-            return self._super.get_train_ops(identifier)
+            return self._super.get_operations(identifier)
 
         def get_global_losses(self, identifier='default'):
 
@@ -146,7 +146,7 @@ class _RecommenderGraph(object):
         self.interactiongraph = self._SubGraph(self)
         self.optimizergraph = self._SubGraph(self)
 
-        self._train_op_identifier_set = set()
+        self._operation_identifier_set = set()
         self._loss_identifier_set = set()
         self._output_identifier_set = set()
         self._input_mapping_dict = dict()
@@ -172,10 +172,10 @@ class _RecommenderGraph(object):
         
         self._input_mapping_dict[identifier].update(update_input_mapping)
 
-    def register_train_op(self, train_op, identifier='default'):
+    def register_operation(self, operation, identifier='default'):
 
-        self._train_op_identifier_set.add(identifier)
-        tf.add_to_collection('openrec.recommender.train_ops.'+identifier, train_op)
+        self._operation_identifier_set.add(identifier)
+        tf.add_to_collection('openrec.recommender.operations.'+identifier, operation)
 
     def register_loss(self, loss, identifier='default'):
 
@@ -240,10 +240,10 @@ class _RecommenderGraph(object):
 
         return self._input_mapping_dict[identifier]
 
-    def get_train_ops(self, identifier='default'):
+    def get_operations(self, identifier='default'):
         
         with self._tf_graph.as_default():
-            return tf.get_collection('openrec.recommender.train_ops.'+identifier)
+            return tf.get_collection('openrec.recommender.operations.'+identifier)
 
     def get_losses(self, identifier='default'):
         
@@ -276,28 +276,48 @@ class Recommender(object):
     def _generate_feed_dict(self, batch_data, input_map):
 
         feed_dict = dict()
-        for key in input_map:
+        
+        if type(batch_data) is np.ndarray:
+            keys = batch_data.dtype.names
+        elif type(batch_data) is dict:
+            keys = batch_data.keys()
+        else:
+            assert False, "Invalid batch data format"
+            
+        for key in keys:
             feed_dict[input_map[key]] = batch_data[key]
         return feed_dict
 
-    def train(self, batch_data, input_mapping_id='default', train_ops_id='default', losses_id='default', outputs_id='default'):
+    def train(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
 
         assert self._train, "Train is disabled"
         assert self._flag_isbuilt, "Train graph is not built"
         
-        feed_dict = self._generate_feed_dict(batch_data, 
-                                            self.T.get_input_mapping(input_mapping_id))
-        train_ops = self.T.get_train_ops(train_ops_id)
-        losses_nodes = self.T.get_losses(losses_id)
-        if len(losses_nodes) > 0:
-            losses = [tf.add_n(losses_nodes)]
+        if input_mapping_id is None:
+            feed_dict = {}
         else:
+            feed_dict = self._generate_feed_dict(batch_data, 
+                                            self.T.get_input_mapping(input_mapping_id))
+        if operations_id is None:
+            operations = []
+        else:
+            operations = self.T.get_operations(operations_id)
+        if losses_id is None:
             losses = []
-        outputs = self.T.get_outputs(outputs_id)
-        results = self._tf_train_sess.run(train_ops+losses+outputs,
+        else:
+            losses_nodes = self.T.get_losses(losses_id)
+            if len(losses_nodes) > 0:
+                losses = [tf.add_n(losses_nodes)]
+            else:
+                losses = []
+        if outputs_id is None:
+            outputs = []
+        else:
+            outputs = self.T.get_outputs(outputs_id)
+        results = self._tf_train_sess.run(operations+losses+outputs,
                                  feed_dict=feed_dict)
         
-        return_dict = {'losses': results[len(train_ops):len(train_ops)+len(losses)],
+        return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
                       'outputs': results[-len(outputs):]}
         
         self._flag_updated = True
@@ -315,7 +335,7 @@ class Recommender(object):
                                  feed_dict=feed_dict)
         return results
         
-    def serve(self, batch_data, input_mapping_id='default', losses_id='default', outputs_id='default'):
+    def serve(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
 
         assert self._serve, "serve is disabled"
         assert self._flag_isbuilt, "serve graph is not built"
@@ -323,26 +343,51 @@ class Recommender(object):
         if self._flag_updated:
             self._save_and_load_for_serve()
             self._flag_updated = False
-            
-        feed_dict = self._generate_feed_dict(batch_data, self.S.get_input_mapping(input_mapping_id))
-        losses_nodes = self.S.get_losses(losses_id)
-        if len(losses_nodes) > 0:
-            losses = [tf.add_n(losses_nodes)]
+        
+        if input_mapping_id is None:
+            feed_dict = {}
         else:
+            feed_dict = self._generate_feed_dict(batch_data, self.S.get_input_mapping(input_mapping_id))
+        
+        if operations_id is None:
+            operations = []
+        else:
+            operations = self.S.get_operations(operations_id)
+        
+        if losses_id is None:
             losses = []
-        outputs = self.S.get_outputs(outputs_id)
-        results = self._tf_serve_sess.run(losses+outputs, 
+        else:
+            losses_nodes = self.S.get_losses(losses_id)
+            if len(losses_nodes) > 0:
+                losses = [tf.add_n(losses_nodes)]
+            else:
+                losses = []
+        
+        if outputs_id is None:
+            outputs = []
+        else:
+            outputs = self.S.get_outputs(outputs_id)
+            
+        results = self._tf_serve_sess.run(operations+losses+outputs, 
                             feed_dict=feed_dict)
 
-        return {'losses': results[:len(losses)], 'outputs': results[len(losses):]}
+        return {'losses': results[len(operations):len(operations)+len(losses)], 
+                'outputs': results[-len(outputs):]}
     
     def serve_inspect_ports(self, batch_data, ports=[], input_mapping_id='default'):
         
         assert self._serve, "serve graph is disabled"
         assert self._flag_isbuilt, "serve graph is not built"
         
-        feed_dict = self._generate_feed_dict(batch_data, 
-                                            self.T.get_input_mapping(input_mapping_id))
+        if self._flag_updated:
+            self._save_and_load_for_serve()
+            self._flag_updated = False
+        
+        if input_mapping_id is None:
+            feed_dict = {}
+        else:
+            feed_dict = self._generate_feed_dict(batch_data, 
+                                            self.S.get_input_mapping(input_mapping_id))
         
         results = self._tf_serve_sess.run(ports,
                                  feed_dict=feed_dict)
@@ -391,7 +436,7 @@ class Recommender(object):
                 var_shape = curr_var.get_shape().as_list()
                 if var_shape == saved_shapes[saved_var_name]:
                     restore_vars.append(curr_var)
-        print('... restored variables:', ','.join([var.name for var in restore_vars]))
+        # print('... restored variables:', ','.join([var.name for var in restore_vars]))
         saver = tf.train.Saver(restore_vars)
         saver.restore(session, save_file)
             

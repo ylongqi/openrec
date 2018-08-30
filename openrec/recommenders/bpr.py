@@ -72,7 +72,7 @@ def BPR(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l2
     def optimizer_graph(subgraph):
         losses = tf.add_n(subgraph.get_global_losses())
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        subgraph.register_global_train_op(optimizer.minimize(losses))
+        subgraph.register_global_operation(optimizer.minimize(losses))
 
     @s.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias'])
     def serve_interaction_graph(subgraph):

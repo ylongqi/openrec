@@ -1,14 +1,9 @@
-import os
-import sys
-sys.path.append(os.getcwd())
-
-from openrec import ImplicitModelTrainer
+from openrec import ModelTrainer
 from openrec.utils import Dataset
 from openrec.recommenders import UCML
 from openrec.utils.evaluators import AUC, Recall
 from openrec.utils.samplers import RandomPairwiseSampler
 from openrec.utils.samplers import EvaluationSampler
-from config import sess_config
 import dataloader
 
 raw_data = dataloader.load_citeulike()
@@ -31,10 +26,10 @@ model = UCML(batch_size=batch_size, total_users=train_dataset.total_users(), tot
 
 def train_it_func(model, batch_data):
     loss = model.train(batch_data)['losses'][0]
-    model.train(batch_data, train_ops_id='censor_embedding')
+    model.train(batch_data, operations_id='censor_embedding')
     return loss
 
-model_trainer = ImplicitModelTrainer(model=model,
+model_trainer = ModelTrainer(model=model,
                                      train_it_func=train_it_func)
 
 auc_evaluator = AUC()

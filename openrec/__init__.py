@@ -1,2 +1,2 @@
-from openrec.implicit_model_trainer import ImplicitModelTrainer
+from openrec.model_trainer import ModelTrainer
 from openrec.fast_dot_product_server import FastDotProductServer

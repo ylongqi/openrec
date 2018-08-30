@@ -1,14 +1,10 @@
 from __future__ import print_function
-from tqdm import tqdm
-import math
+from openrec.utils.evaluators import EvalManager
 from termcolor import colored
-import numpy as np
-from openrec.utils.evaluators import ImplicitEvalManager
 import sys
-import json
-import pickle
+import numpy as np
 
-class ImplicitModelTrainer(object):
+class ModelTrainer(object):
 
     def __init__(self, model, train_it_func=None, eval_it_func=None):
 
@@ -64,7 +60,7 @@ class ImplicitModelTrainer(object):
     def train(self, total_it, eval_it, save_it, train_sampler, start_it=0, eval_samplers=[], evaluators=[]):
         
         acc_loss = 0
-        self._eval_manager = ImplicitEvalManager(evaluators=evaluators)
+        self._eval_manager = EvalManager(evaluators=evaluators)
         
         print(colored('[Training starts, total_it: %d, eval_it: %d, save_it: %d]' \
                           % (total_it, eval_it, save_it), 'blue'))

@@ -1,7 +1,6 @@
 import numpy as np
-from tqdm import tqdm
 
-class ImplicitEvalManager(object):
+class EvalManager(object):
 
     def __init__(self, evaluators=[]):
 

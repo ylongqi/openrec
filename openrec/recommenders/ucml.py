@@ -34,7 +34,7 @@ def UCML(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l
                                          shape=[total_users, dim_user_embed], 
                                          scope='user')
         user_censor_ops = censor_vec(user_embedding, subgraph['user_id'])
-        subgraph.register_global_train_op(user_censor_ops, 'censor_embedding')
+        subgraph.register_global_operation(user_censor_ops, 'censor_embedding')
     
     @t.itemgraph(overwrite=False)
     def censor_item_vec(subgraph):
@@ -45,7 +45,7 @@ def UCML(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, l
                                          subgraph=subgraph, 
                                          scope='item')
         item_censor_ops = censor_vec(item_embedding, tf.concat([subgraph['p_item_id'], subgraph['n_item_id']], axis=0))
-        subgraph.register_global_train_op(item_censor_ops, 'censor_embedding')
+        subgraph.register_global_operation(item_censor_ops, 'censor_embedding')
     
     @t.interactiongraph(ins=['user_vec', 'p_item_vec', 'n_item_vec', 'p_item_bias', 'n_item_bias'])
     def interaction_graph(subgraph):

@@ -1,14 +1,9 @@
-import os
-import sys
-sys.path.append(os.getcwd())
-
-from openrec import ImplicitModelTrainer
+from openrec import ModelTrainer
 from openrec.utils import Dataset
 from openrec.recommenders import BPR
 from openrec.utils.evaluators import AUC
 from openrec.utils.samplers import RandomPairwiseSampler
 from openrec.utils.samplers import EvaluationSampler
-from config import sess_config
 import dataloader
 
 raw_data = dataloader.load_citeulike()
@@ -29,7 +24,7 @@ test_sampler = EvaluationSampler(batch_size=batch_size, dataset=test_dataset)
 bpr_model = BPR(batch_size=batch_size, total_users=train_dataset.total_users(), total_items=train_dataset.total_items(), 
                 dim_user_embed=dim_embed, dim_item_embed=dim_embed, save_model_dir='bpr_recommender/', train=True, serve=True)
 
-model_trainer = ImplicitModelTrainer(model=bpr_model)
+model_trainer = ModelTrainer(model=bpr_model)
 
 auc_evaluator = AUC()
 model_trainer.train(total_it=total_it, eval_it=eval_it, save_it=save_it, train_sampler=train_sampler, 

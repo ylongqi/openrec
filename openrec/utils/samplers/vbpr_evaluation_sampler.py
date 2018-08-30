@@ -2,7 +2,6 @@ import numpy as np
 import random
 from openrec.utils.samplers import Sampler
 import math
-from tqdm import tqdm
 
 def VBPREvaluationSampler(batch_size, dataset, item_vfeature, seed=100):
     
@@ -10,7 +9,7 @@ def VBPREvaluationSampler(batch_size, dataset, item_vfeature, seed=100):
     def batch(dataset, batch_size=batch_size, item_vfeature=item_vfeature):
         _, dim_v = item_vfeature.shape
         while True:
-            for user_id in tqdm(dataset.warm_users()):
+            for user_id in dataset.warm_users():
                 positive_items = dataset.get_positive_items(user_id)
                 negative_items = dataset.get_negative_items(user_id)
                 all_items = positive_items + negative_items

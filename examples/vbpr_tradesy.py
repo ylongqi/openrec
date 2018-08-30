@@ -1,8 +1,4 @@
-import os
-import sys
-sys.path.append(os.getcwd())
-
-from openrec import ImplicitModelTrainer
+from openrec import ModelTrainer
 from openrec import FastDotProductServer
 from openrec.utils import Dataset
 from openrec.recommenders import VBPR
@@ -64,7 +60,7 @@ fastmodel = FastDotProductServer(model=model, batch_size=batch_size,
                      extract_item_lf_func=extract_item_lf_func, 
                      extract_item_bias_func=extract_item_bias_func)
 
-model_trainer = ImplicitModelTrainer(model=fastmodel)
+model_trainer = ModelTrainer(model=fastmodel)
 
 auc_evaluator = AUC()
 recall_evaluator = Recall(recall_at=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100])  

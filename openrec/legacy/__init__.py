@@ -1,0 +1,2 @@
+from openrec.legacy.implicit_model_trainer import ImplicitModelTrainer
+from openrec.legacy.itr_mlp_model_trainer import ItrMLPModelTrainer

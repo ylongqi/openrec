@@ -64,8 +64,8 @@ Use `download_dataset.sh` script.
 
 * [OpenRec website](http://www.openrec.ai/)
 * [OpenRec legacy documents](http://openrec.readthedocs.io/en/latest/)
-* [OpenRec legacy tutorials](https://github.com/ylongqi/openrec/tree/master/tutorials)
-* [OpenRec legacy examples](https://github.com/ylongqi/openrec/blob/master/examples)
+* [OpenRec legacy tutorials](https://github.com/ylongqi/openrec/tree/master/legacy_tutorials)
+* [OpenRec legacy examples](https://github.com/ylongqi/openrec/tree/master/legacy_examples)
 
 ## How to cite
 

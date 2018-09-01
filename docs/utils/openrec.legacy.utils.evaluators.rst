@@ -1,8 +1,8 @@
 Evaluators package
 ==================================
 
-.. automodule:: openrec.utils.evaluators
-.. currentmodule:: openrec.utils.evaluators
+.. automodule:: openrec.legacy.utils.evaluators
+.. currentmodule:: openrec.legacy.utils.evaluators
 
 Evaluator
 ---------

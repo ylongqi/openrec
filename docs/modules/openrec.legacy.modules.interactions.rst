@@ -1,8 +1,8 @@
 Interactions 
 =====================================
 
-.. automodule:: openrec.modules.interactions
-.. currentmodule:: openrec.modules.interactions
+.. automodule:: openrec.legacy.modules.interactions
+.. currentmodule:: openrec.legacy.modules.interactions
 
 
 

@@ -1,8 +1,8 @@
 Samplers
 ================================
 
-.. automodule:: openrec.utils.samplers
-.. currentmodule:: openrec.utils.samplers
+.. automodule:: openrec.legacy.utils.samplers
+.. currentmodule:: openrec.legacy.utils.samplers
 
 Sampler
 ----------------

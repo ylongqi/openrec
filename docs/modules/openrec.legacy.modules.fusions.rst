@@ -1,8 +1,8 @@
 Fusions 
 =====================================
 
-.. automodule:: openrec.modules.fusions
-.. currentmodule:: openrec.modules.fusions
+.. automodule:: openrec.legacy.modules.fusions
+.. currentmodule:: openrec.legacy.modules.fusions
 
 
 

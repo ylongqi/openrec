@@ -2,8 +2,8 @@ User PMF
 =================================
 
 
-.. automodule:: openrec.recommenders
-.. currentmodule:: openrec.recommenders
+.. automodule:: openrec.legacy.recommenders
+.. currentmodule:: openrec.legacy.recommenders
 
 .. autoclass:: UserPMF
     :members:
@@ -20,7 +20,7 @@ User PMF
 
 .. user\_pmf module
 .. =======================================
-..     automodule openrec.recommenders.user_pmf
+..     automodule openrec.legacy.recommenders.user_pmf
 ..     :members:
 ..     :undoc-members:
 ..     :show-inheritance:

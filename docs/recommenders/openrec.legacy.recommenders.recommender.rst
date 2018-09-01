@@ -2,8 +2,8 @@ Recommender
 =================================
 
 
-.. automodule:: openrec.recommenders
-.. currentmodule:: openrec.recommenders
+.. automodule:: openrec.legacy.recommenders
+.. currentmodule:: openrec.legacy.recommenders
 
 .. autoclass:: Recommender
     :members:

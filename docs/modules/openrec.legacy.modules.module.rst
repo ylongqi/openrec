@@ -2,8 +2,8 @@ Module
 =================================
 
 
-.. automodule:: openrec.modules
-.. currentmodule:: openrec.modules
+.. automodule:: openrec.legacy.modules
+.. currentmodule:: openrec.legacy.modules
 
 .. autoclass:: Module
     :members:

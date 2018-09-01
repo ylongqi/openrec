@@ -1,8 +1,8 @@
 Extractions 
 =====================================
 
-.. automodule:: openrec.modules.extractions
-.. currentmodule:: openrec.modules.extractions
+.. automodule:: openrec.legacy.modules.extractions
+.. currentmodule:: openrec.legacy.modules.extractions
 
 
 

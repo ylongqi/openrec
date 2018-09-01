@@ -25,8 +25,9 @@
 
 More recommenders, examples, documents and tutorials are under development. Please checkout following events where we will present OpenRec new features:
 
-Strata Data Conference 2018: https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/68280
-Recsys 2018: https://recsys.acm.org/recsys18/tutorials/#content-tab-1-1-tab
+*Strata Data Conference 2018:* https://conferences.oreilly.com/strata/strata-ny/public/schedule/detail/68280
+
+*Recsys 2018:* https://recsys.acm.org/recsys18/tutorials/#content-tab-1-1-tab
 
 **To use original openrec, simply import `openrec.legacy`**.
 

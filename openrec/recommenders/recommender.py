@@ -337,22 +337,22 @@ class Recommender(object):
         else:
             feed_dict = self._generate_feed_dict(batch_data, 
                                             self.T.get_input_mapping(input_mapping_id))
+        
         if operations_id is None:
             operations = []
         else:
             operations = self.T.get_operations(operations_id)
+        
         if losses_id is None:
             losses = []
         else:
-            losses_nodes = self.T.get_losses(losses_id)
-            if len(losses_nodes) > 0:
-                losses = [tf.add_n(losses_nodes)]
-            else:
-                losses = []
+            losses = self.T.get_losses(losses_id)
+            
         if outputs_id is None:
             outputs = []
         else:
             outputs = self.T.get_outputs(outputs_id)
+        
         results = self._tf_train_sess.run(operations+losses+outputs,
                                  feed_dict=feed_dict)
         
@@ -396,15 +396,8 @@ class Recommender(object):
         if losses_id is None:
             losses = []
         else:
-            losses_nodes = self.S.get_losses(losses_id)
-            if len(losses_nodes) > 0:
-                # BUG: tf.add_n keeps adding loss to the graph while serving
-                # temporarily comment out the following line
-                # losses = [tf.add_n(losses_nodes)]
-                loss = []
-            else:
-                losses = []
-        
+            losses = self.S.get_losses(losses_id)
+            
         if outputs_id is None:
             outputs = []
         else:

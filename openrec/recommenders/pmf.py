@@ -70,20 +70,16 @@ def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=
         subgraph.register_global_operation(optimizer.minimize(losses))
     
     @t.connector
-    def train_connect(graph):
+    @s.connector
+    def connect(graph):
         graph.usergraph['user_id'] = graph.inputgraph['user_id']
         graph.itemgraph['item_id'] = graph.inputgraph['item_id']
-        graph.interactiongraph['label'] = graph.inputgraph['label']
         graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
         graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
         graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
     
-    @s.connector
-    def serve_connect(graph):
-        graph.usergraph['user_id'] = graph.inputgraph['user_id']
-        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
-        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
-        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
-        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
+    @t.connector.extend
+    def connect_label(graph):
+        graph.interactiongraph['label'] = graph.inputgraph['label']
     
     return rec

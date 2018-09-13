@@ -398,7 +398,10 @@ class Recommender(object):
         else:
             losses_nodes = self.S.get_losses(losses_id)
             if len(losses_nodes) > 0:
-                losses = [tf.add_n(losses_nodes)]
+                # BUG: tf.add_n keeps adding loss to the graph while serving
+                # temporarily comment out the following line
+                # losses = [tf.add_n(losses_nodes)]
+                loss = []
             else:
                 losses = []
         
@@ -406,7 +409,6 @@ class Recommender(object):
             outputs = []
         else:
             outputs = self.S.get_outputs(outputs_id)
-            
         results = self._tf_serve_sess.run(operations+losses+outputs, 
                             feed_dict=feed_dict)
 

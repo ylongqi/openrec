@@ -3,7 +3,8 @@ import random
 
 class Dataset(object):
     
-    def __init__(self, raw_data, total_users, total_items, implicit_negative=True, num_negatives=None, name='dataset', seed=100):
+    def __init__(self, raw_data, total_users, total_items, implicit_negative=True, 
+                 num_negatives=None, name='dataset', seed=100, sortby=None, asc=True):
         
         random.seed(seed)
         self.name = name
@@ -15,6 +16,8 @@ class Dataset(object):
         
         self._total_users = total_users
         self._total_items = total_items
+        
+        self._sortby = sortby
         
         self._index_store = dict()
         if implicit_negative:
@@ -57,6 +60,14 @@ class Dataset(object):
             self._index_store['negative_sets'] = dict()
             for user_id in self._index_store['negative']:
                 self._index_store['negative_sets'][user_id] = set(self._index_store['negative'][user_id])
+        
+        if self._sortby is not None:
+            self._index_store['positive_sorts'] = dict()
+            for user_id in self._index_store['positive_sets']:
+                self._index_store['positive_sorts'][user_id] = sorted(list(self._index_store['positive_sets'][user_id]),
+                                                                    key=lambda item:\
+                                             self._raw_data[self._index_store['positive'][user_id][item]][self._sortby],
+                                                                    reverse=not asc)
     
     def next_random_record(self):
         
@@ -94,10 +105,14 @@ class Dataset(object):
                 sample_id = random.randint(0, self._total_items-1)
             return list(sample_set)
         
-    def get_positive_items(self, user_id):
-        
+    def get_positive_items(self, user_id, sort=False):
+
         if user_id in self._index_store['positive_sets']:
-            return list(self._index_store['positive_sets'][user_id])
+            if sort:
+                assert self._sortby is not None, "sortby key is not specified."
+                return self._index_store['positive_sorts'][user_id]
+            else:
+                return list(self._index_store['positive_sets'][user_id])
         else:
             return []
     

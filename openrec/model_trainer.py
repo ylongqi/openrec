@@ -26,10 +26,10 @@ class ModelTrainer(object):
         self._trained_it = 0
         
     def _default_train_iter_func(self, model, batch_data):
-        return model.train(batch_data)['losses'][0]
+        return np.sum(model.train(batch_data)['losses'])
     
     def _default_eval_iter_func(self, model, batch_data):
-        return model.serve(batch_data)['outputs'][0]
+        return np.squeeze(model.serve(batch_data)['outputs'])
     
     def _evaluate(self, eval_sampler):
         

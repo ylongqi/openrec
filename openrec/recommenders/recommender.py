@@ -461,16 +461,14 @@ class Recommender(object):
         
         reader = tf.train.NewCheckpointReader(save_file)
         saved_shapes = reader.get_variable_to_shape_map()
-        var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-                if var.name.split(':')[0] in saved_shapes and len(var.shape) > 0])
+        
         restore_vars = []
-        with tf.variable_scope('', reuse=True):
-            for var_name, saved_var_name in var_names:
-                curr_var = tf.get_variable(saved_var_name)
-                var_shape = curr_var.get_shape().as_list()
-                if var_shape == saved_shapes[saved_var_name]:
-                    restore_vars.append(curr_var)
-        # print('... restored variables:', ','.join([var.name for var in restore_vars]))
+        for var in tf.global_variables():
+            var_name = var.name.split(':')[0]
+            if var_name in saved_shapes and len(var.shape) > 0:
+                if var.get_shape().as_list() == saved_shapes[var_name]:
+                    restore_vars.append(var)
+        
         saver = tf.train.Saver(restore_vars)
         saver.restore(session, save_file)
             

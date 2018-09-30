@@ -21,7 +21,7 @@ max_seq_len = 20
 
 total_iter = int(1e5)
 batch_size = 100
-eval_iter = 1000
+eval_iter = 100
 save_iter = eval_iter
 
 train_dataset = Dataset(train_data, total_users, total_items, sortby='ts',

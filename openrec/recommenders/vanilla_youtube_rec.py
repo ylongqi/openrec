@@ -6,6 +6,7 @@ import tensorflow as tf
 def VanillaYouTubeRec(batch_size, dim_item_embed, max_seq_len, total_items,
         l2_reg_embed=None, l2_reg_mlp=None, dropout=None, init_model_dir=None,
         save_model_dir='DRN/', train=True, serve=False):
+
     rec = Recommender(init_model_dir=init_model_dir, 
                       save_model_dir=save_model_dir, train=train, serve=serve)
 
@@ -37,11 +38,12 @@ def VanillaYouTubeRec(batch_size, dim_item_embed, max_seq_len, total_items,
     @rec.servegraph.itemgraph(ins=['seq_item_id', 'seq_len'],
                               outs=['seq_vec'])
     def item_graph(subgraph):
-        _, subgraph['seq_vec']= LatentFactor(init='normal',
-                                       id_=subgraph['seq_item_id'],
-                                       shape=[total_items,dim_item_embed],
-                                       subgraph=subgraph,
-                                       scope='item')
+        _, subgraph['seq_vec']= LatentFactor(l2_reg=l2_reg_embed,
+                                             init='normal',
+                                             id_=subgraph['seq_item_id'],
+                                             shape=[total_items,dim_item_embed],
+                                             subgraph=subgraph,
+                                             scope='item')
 
         
     @rec.traingraph.interactiongraph(ins=['seq_vec', 'seq_len', 'label'])

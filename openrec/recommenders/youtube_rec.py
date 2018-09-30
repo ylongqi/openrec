@@ -55,13 +55,17 @@ def YouTubeRec(batch_size, user_dict, item_dict, dim_user_embed, dim_item_embed,
     @rec.traingraph.usergraph(ins=['user_geo', 'user_gender'], outs=['user_vec'])
     @rec.servegraph.usergraph(ins=['user_geo', 'user_gender'], outs=['user_vec'])
     def user_graph(subgraph):
-        _, user_gender = LatentFactor(shape=[user_dict['gender'], dim_user_embed['gender']],
+        _, user_gender = LatentFactor(l2_reg=l2_reg_embed,
+                                      shape=[user_dict['gender'], 
+                                      dim_user_embed['gender']],
                                       id_=subgraph['user_gender'],
                                       subgraph=subgraph,
                                       init='normal',
                                       scope='user_gender')
 
-        _, user_geo = LatentFactor(shape=[user_dict['geo'], dim_user_embed['geo']],
+        _, user_geo = LatentFactor(l2_reg=l2_reg_embed,
+                                   shape=[user_dict['geo'], 
+                                   dim_user_embed['geo']],
                                    id_=subgraph['user_geo'],
                                    subgraph=subgraph,
                                    init='normal',
@@ -72,12 +76,13 @@ def YouTubeRec(batch_size, user_dict, item_dict, dim_user_embed, dim_item_embed,
     @rec.traingraph.itemgraph(ins=['seq_item_id', 'seq_len'], outs=['seq_vec'])
     @rec.servegraph.itemgraph(ins=['seq_item_id', 'seq_len'], outs=['seq_vec'])
     def item_graph(subgraph):
-        _, subgraph['seq_vec']= LatentFactor(init='normal',
-                                       id_=subgraph['seq_item_id'],
-                                       shape=[item_dict['id'], dim_item_embed['id']],
-                                       subgraph=subgraph,
-                                       scope='item')
-
+        _, subgraph['seq_vec']= LatentFactor(l2_reg=l2_reg_embed,
+                                             init='normal',
+                                             id_=subgraph['seq_item_id'],
+                                             shape=[item_dict['id'], 
+                                             dim_item_embed['id']],
+                                             subgraph=subgraph,
+                                             scope='item')
 
 
     @rec.traingraph.interactiongraph(ins=['user_vec', 'seq_vec', 'seq_len', 'label'])
@@ -92,8 +97,7 @@ def YouTubeRec(batch_size, user_dict, item_dict, dim_user_embed, dim_item_embed,
                    dropout=dropout, 
                    train=True, 
                    subgraph=subgraph,
-                   scope='MLPSoftmax' 
-                  )
+                   scope='MLPSoftmax')
 
 
     @rec.servegraph.interactiongraph(ins=['user_vec', 'seq_vec', 'seq_len'])
@@ -106,8 +110,8 @@ def YouTubeRec(batch_size, user_dict, item_dict, dim_user_embed, dim_item_embed,
                    l2_reg=l2_reg_mlp, 
                    train=False, 
                    subgraph=subgraph,
-                   scope='MLPSoftmax' 
-                   )
+                   scope='MLPSoftmax')
+
 
     @rec.traingraph.optimizergraph
     def optimizer_graph(subgraph):

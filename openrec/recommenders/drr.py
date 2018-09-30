@@ -1,114 +1,176 @@
 from openrec.recommenders import Recommender
 from openrec.modules.extractions import LatentFactor, MultiLayerFC
-from openrec.modules.interactions import PointwiseMLPCE
+from openrec.modules.interactions import MLPSoftmax
 import tensorflow as tf
 
-def DRR(batch_size, dim_user_embed, dim_item_embed, total_users, total_items,
-        l2_reg_embed=None, l2_reg_mlp=None, dropout=None, init_model_dir=None,
-        save_model_dir='DRN/', train=True, serve=False):
+def DRR(batch_size, user_dict, item_dict, dim_user_embed, dim_item_embed, max_seq_len, l2_reg_embed=None, l2_reg_mlp=None, dropout=None, init_model_dir=None, save_model_dir='DRN/', train=True, serve=False):
+
     rec = Recommender(init_model_dir=init_model_dir, 
                       save_model_dir=save_model_dir, train=train, serve=serve)
 
-    t = rec.traingraph
-    s = rec.servegraph
-
-    @t.inputgraph(outs=['user_id', 'item_id', 'label'])
+    @rec.traingraph.inputgraph(outs=['seq_item_id', 'seq_len', 'label'])
     def train_input_graph(subgraph):
-        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[batch_size],
-                                             name='user_id')
-        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[batch_size],
-                                             name='item_id')
+        subgraph['seq_item_id'] = tf.placeholder(tf.int32, shape=[batch_size, max_seq_len],
+                                                 name='seq_item_id')
+        subgraph['seq_len'] = tf.placeholder(tf.int32, shape=[batch_size],
+                                             name='seq_len')
         subgraph['label'] = tf.placeholder(tf.int32, shape=[batch_size],
                                            name='label')
-        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
-                                               'item_id': subgraph['item_id'],
+        subgraph.register_global_input_mapping({'seq_item_id': subgraph['seq_item_id'],
+                                               'seq_len': subgraph['seq_len'],
                                                'label': subgraph['label']})
+    
 
-    @s.inputgraph(outs=['user_id', 'item_id'])
+
+    @rec.servegraph.inputgraph(outs=['seq_item_id', 'seq_len'])
     def serve_input_graph(subgraph):
-        subgraph['user_id'] = tf.placeholder(tf.int32, shape=[None],
-                                             name='user_id')
-        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[None],
-                                             name='item_id')
-        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
-                                                'item_id': subgraph['item_id']})
+        subgraph['seq_item_id'] = tf.placeholder(tf.int32, shape=[None, max_seq_len],
+                                                 name='seq_item_id')
+        subgraph['seq_len'] = tf.placeholder(tf.int32, shape=[None],
+                                             name='seq_len')
+        subgraph.register_global_input_mapping({'seq_item_id': subgraph['seq_item_id'],
+                                               'seq_len': subgraph['seq_len']})
 
-    @t.usergraph(ins=['user_id'], outs=['user_vec'])
-    @s.usergraph(ins=['user_id'], outs=['user_vec'])
+
+    @rec.traingraph.inputgraph.extend(outs=['user_geo', 'user_gender']) 
+                                            #'item_geo', 'item_type', 'item_tag'])
+    def add_feature(subgraph):
+        subgraph['user_gender'] = tf.placeholder(tf.int32, shape=[batch_size], name='user_gender')
+        subgraph['user_geo'] = tf.placeholder(tf.int32, shape=[batch_size], name='user_geo')
+        #subgraph['item_geo'] = tf.placeholder(tf.int32, shape=[batch_size], name='item_geo')
+        #subgraph['item_type'] = tf.placeholder(tf.int32, shape=[batch_size], name='item_type')
+        #subgraph['item_tag'] = tf.placeholder(tf.int32, shape=[batch_size], name='item_tag')
+        
+        subgraph.update_global_input_mapping({'user_gender': subgraph['user_gender'],
+                                              'user_geo': subgraph['user_geo'],
+                                              #'item_geo': subgraph['item_geo'],
+                                              #'item_type': subgraph['item_type'],
+                                              #'item_tag': subgraph['item_tag'],
+                                             })
+
+
+    @rec.servegraph.inputgraph.extend(outs=['user_gender', 'user_geo'])
+                                            #'item_geo', 'item_type', 'item_tag'])
+    def add_feature(subgraph):
+        subgraph['user_gender'] = tf.placeholder(tf.int32, shape=[None], name='user_gender')
+        subgraph['user_geo'] = tf.placeholder(tf.int32, shape=[None], name='user_geo')
+        #subgraph['item_geo'] = tf.placeholder(tf.int32, shape=[None], name='item_geo')
+        #subgraph['item_type'] = tf.placeholder(tf.int32, shape=[None], name='item_type')
+        #subgraph['item_tag'] = tf.placeholder(tf.int32, shape=[None], name='item_tag')
+        
+        subgraph.update_global_input_mapping({'user_gender': subgraph['user_gender'],
+                                              'user_geo': subgraph['user_geo'],
+                                              #'item_geo': subgraph['item_geo'],
+                                              #'item_type': subgraph['item_type'],
+                                              #'item_tag': subgraph['item_tag'],
+                                             })
+
+    
+    @rec.traingraph.usergraph(ins=['user_geo', 'user_gender'], outs=['user_vec'])
+    @rec.servegraph.usergraph(ins=['user_geo', 'user_gender'], outs=['user_vec'])
     def user_graph(subgraph):
-        _, subgraph['user_vec'] = LatentFactor(l2_reg=l2_reg_embed,
-                                               init='normal',
-                                               id_=subgraph['user_id'],
-                                               shape=[total_users,dim_user_embed],
-                                               subgraph=subgraph,
-                                               scope='user')
-    ##TODO: add user features and concat here, use usergraph.extend
+        _, user_gender = LatentFactor(shape=[user_dict['gender'], dim_user_embed['gender']],
+                                      id_=subgraph['user_gender'],
+                                      subgraph=subgraph,
+                                      init='normal',
+                                      scope='user_gender')
+
+        _, user_geo = LatentFactor(shape=[user_dict['geo'], dim_user_embed['geo']],
+                                   id_=subgraph['user_geo'],
+                                   subgraph=subgraph,
+                                   init='normal',
+                                   scope='user_geo')
+        subgraph['user_vec'] = tf.concat([user_gender, user_geo], axis=1)
 
 
-    @t.itemgraph(ins=['item_id'], outs=['item_vec', 'item_bias'])
-    @s.itemgraph(ins=['item_id'], outs=['item_vec', 'item_bias'])
-    def itemgraph(subgraph):
-        _, subgraph['item_vec'] = LatentFactor(l2_reg=l2_reg_embed,
-                                               init='normal',
-                                               id_=subgraph['item_id'],
-                                               shape=[total_items,dim_item_embed],
-                                               subgraph=subgraph,
-                                               scope='item')
-        _, subgraph['item_bias'] = LatentFactor(l2_reg=l2_reg_embed, 
-                                                init='zero',
-                                                id_=subgraph['item_id'],
-                                                shape=[total_items,1],
-                                                subgraph=subgraph,
-                                                scope='item_bias')
+    @rec.traingraph.itemgraph(ins=['seq_item_id', 'seq_len'], outs=['seq_vec'])
+    @rec.servegraph.itemgraph(ins=['seq_item_id', 'seq_len'], outs=['seq_vec'])
+    def item_graph(subgraph):
+        _, subgraph['seq_vec']= LatentFactor(init='normal',
+                                       id_=subgraph['seq_item_id'],
+                                       shape=[item_dict['id'], dim_item_embed['id']],
+                                       subgraph=subgraph,
+                                       scope='item')
 
 
-    @t.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias', 'label'])
+
+    #@rec.traingraph.itemgraph.extend(ins=['item_geo', 'item_type', 'item_tag'], outs=['item_vec'])
+    #@rec.servegraph.itemgraph.extend(ins=['item_geo', 'item_type', 'item_tag'], outs=['item_vec'])
+    #def item_extend(subgraph):
+
+    #    _, item_geo = LatentFactor(shape=[item_dict['geo'], dim_item_embed['geo']],
+    #                                  id_=subgraph['item_geo'],
+    #                                  subgraph=subgraph,
+    #                                  init='normal',
+    #                                  scope='item_geo')
+
+
+    #    _, item_type = LatentFactor(shape=[item_dict['type'], dim_item_embed['type']],
+    #                                  id_=subgraph['item_type'],
+    #                                  subgraph=subgraph,
+    #                                  init='normal',
+    #                                  scope='item_type')
+    #    
+
+    #    _, item_tag = LatentFactor(shape=[item_dict['type'], dim_item_embed['type']],
+    #                                  id_=subgraph['item_type'],
+    #                                  subgraph=subgraph,
+    #                                  init='normal',
+    #                                  scope='item_type')
+
+
+
+    @rec.traingraph.interactiongraph(ins=['user_vec', 'seq_vec', 'seq_len', 'label'])
     def train_interaction_graph(subgraph):
-        PointwiseMLPCE(user=subgraph['user_vec'], 
-                       item=subgraph['item_vec'], 
-                       dims=[dim_user_embed+dim_item_embed, 1], 
-                       item_bias=subgraph['item_bias'], 
-                       l2_reg=l2_reg_mlp, 
-                       labels=subgraph['label'],
-                       dropout=dropout, 
-                       train=True, 
-                       subgraph=subgraph,
-                       scope='PointwiseMLPCE' 
-                       )
+        MLPSoftmax(user=subgraph['user_vec'],
+                   item=subgraph['seq_vec'], 
+                   seq_len=subgraph['seq_len'],
+                   max_seq_len=max_seq_len,
+                   dims=[dim_user_embed['total'] + dim_item_embed['total'], item_dict['id']], 
+                   l2_reg=l2_reg_mlp, 
+                   labels=subgraph['label'],
+                   dropout=dropout, 
+                   train=True, 
+                   subgraph=subgraph,
+                   scope='MLPSoftmax' 
+                  )
 
-    @s.interactiongraph(ins=['user_vec', 'item_vec', 'item_bias'])
+
+    @rec.servegraph.interactiongraph(ins=['user_vec', 'seq_vec', 'seq_len'])
     def serve_interaction_graph(subgraph):
-        PointwiseMLPCE(user=subgraph['user_vec'], 
-                       item=subgraph['item_vec'], 
-                       dims=[dim_user_embed+dim_item_embed, 1], 
-                       item_bias=subgraph['item_bias'], 
-                       l2_reg=l2_reg_mlp, 
-                       train=False, 
-                       subgraph=subgraph,
-                       scope='PointwiseMLPCE' 
-                       )
+        MLPSoftmax(user=subgraph['user_vec'],
+                   item=subgraph['seq_vec'], 
+                   seq_len=subgraph['seq_len'],
+                   max_seq_len=max_seq_len,
+                   dims=[dim_user_embed['total'] + dim_item_embed['total'], item_dict['id']], 
+                   l2_reg=l2_reg_mlp, 
+                   train=False, 
+                   subgraph=subgraph,
+                   scope='MLPSoftmax' 
+                   )
 
-    @t.optimizergraph
+    @rec.traingraph.optimizergraph
     def optimizer_graph(subgraph):
         losses = tf.add_n(subgraph.get_global_losses())
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         subgraph.register_global_operation(optimizer.minimize(losses))
     
-    @t.connector
+
+    @rec.traingraph.connector
+    @rec.servegraph.connector
+    def connect(graph):
+        graph.itemgraph['seq_item_id'] = graph.inputgraph['seq_item_id']
+        graph.itemgraph['seq_len'] = graph.inputgraph['seq_len']
+        graph.usergraph['user_geo'] = graph.inputgraph['user_geo']
+        graph.usergraph['user_gender'] = graph.inputgraph['user_gender']
+        graph.interactiongraph['seq_len'] = graph.inputgraph['seq_len']
+        graph.interactiongraph['seq_vec'] = graph.itemgraph['seq_vec']
+        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
+
+
+    @rec.traingraph.connector.extend
     def train_connect(graph):
-        graph.usergraph['user_id'] = graph.inputgraph['user_id']
-        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
         graph.interactiongraph['label'] = graph.inputgraph['label']
-        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
-        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
-        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
     
-    @s.connector
-    def serve_connect(graph):
-        graph.usergraph['user_id'] = graph.inputgraph['user_id']
-        graph.itemgraph['item_id'] = graph.inputgraph['item_id']
-        graph.interactiongraph['user_vec'] = graph.usergraph['user_vec']
-        graph.interactiongraph['item_vec'] = graph.itemgraph['item_vec']
-        graph.interactiongraph['item_bias'] = graph.itemgraph['item_bias']
-    
+
     return rec

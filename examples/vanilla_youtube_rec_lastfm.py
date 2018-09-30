@@ -1,6 +1,6 @@
 from openrec import ModelTrainer
 from openrec.utils import Dataset
-from openrec.recommenders import VanillaDRR
+from openrec.recommenders import VanillaYouTubeRec
 from openrec.utils.evaluators import AUC, Recall
 from openrec.utils.samplers import TemporalSampler, TemporalEvaluationSampler
 import numpy as np
@@ -29,12 +29,12 @@ test_sampler = TemporalEvaluationSampler(dataset=test_dataset,
                                          max_seq_len=max_seq_len)
 
 
-model = VanillaDRR(batch_size=batch_size, 
-            total_items=train_dataset.total_items(), 
-            max_seq_len=max_seq_len,
-            dim_item_embed=dim_item_embed, 
-            save_model_dir='drr_recommender/', 
-            train=True, serve=True)
+model = VanillaYouTubeRec(batch_size=batch_size, 
+                          total_items=train_dataset.total_items(), 
+                          max_seq_len=max_seq_len,
+                          dim_item_embed=dim_item_embed, 
+                          save_model_dir='drr_recommender/', 
+                          train=True, serve=True)
 
 
 model_trainer = ModelTrainer(model=model)

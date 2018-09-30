@@ -2,7 +2,7 @@ import numpy as np
 import random
 from openrec.utils.samplers import Sampler
 
-def DRREvaluationSampler(dataset, max_seq_len, user_feature, seed=100, sort=True):
+def YouTubeEvaluationSampler(dataset, max_seq_len, user_feature, seed=100, sort=True):
     
     random.seed(seed)
     def batch(dataset, user_feature=user_feature, max_seq_len=max_seq_len):

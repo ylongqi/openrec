@@ -62,6 +62,10 @@ class ModelTrainer(object):
         acc_loss = 0
         self._eval_manager = EvalManager(evaluators=evaluators)
         
+        train_sampler.reset()
+        for sampler in eval_samplers:
+            sampler.reset()
+        
         print(colored('[Training starts, total_iter: %d, eval_iter: %d, save_iter: %d]' \
                           % (total_iter, eval_iter, save_iter), 'blue'))
         

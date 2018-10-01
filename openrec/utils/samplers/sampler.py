@@ -19,17 +19,35 @@ class Sampler(object):
         
         assert generate_batch is not None, "Batch generation function is not specified"
         assert dataset is not None, "Dataset is not specified"
-        self._q = Queue(maxsize=num_process)
+        self._q = None
         self._dataset = dataset
         self._runner_list = []
+        self._start = False
+        self._num_process = num_process
+        self._generate_batch = generate_batch
         self.name = self._dataset.name
-
-        for i in range(num_process):
-            runner = _Sampler(dataset, self._q, generate_batch)
+        
+    def next_batch(self):
+        
+        if not self._start:
+            self.reset()
+        
+        return self._q.get(block=True)
+        
+    def reset(self):
+        
+        while len(self._runner_list) > 0:
+            runner = self._runner_list.pop()
+            runner.terminate()
+            del runner
+        
+        if self._q is not None:
+            del self._q
+        self._q = Queue(maxsize=self._num_process)
+            
+        for i in range(self._num_process):
+            runner = _Sampler(self._dataset, self._q, self._generate_batch)
             runner.daemon = True
             runner.start()
             self._runner_list.append(runner)
-
-    def next_batch(self):
-
-        return self._q.get(block=True)
+        self._start = True

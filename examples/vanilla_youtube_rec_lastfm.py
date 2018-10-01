@@ -33,7 +33,7 @@ model = VanillaYouTubeRec(batch_size=batch_size,
                           total_items=train_dataset.total_items(), 
                           max_seq_len=max_seq_len,
                           dim_item_embed=dim_item_embed, 
-                          save_model_dir='drr_recommender/', 
+                          save_model_dir='vanilla_youtube_recommender/', 
                           train=True, serve=True)
 
 

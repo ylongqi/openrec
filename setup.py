@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 
 setup(
     name='openrec',
-    version='0.1.5',
-    packages=find_packages(),
+    version='0.2.3',
+    packages=find_packages(exclude=("tutorials",)),
     description="An open-source and modular library for neural network-inspired recommendation algorithms",
     url="http://openrec.ai",
     license='Apache 2.0',

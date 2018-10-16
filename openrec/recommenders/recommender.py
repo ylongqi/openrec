@@ -1,648 +1,506 @@
 import tensorflow as tf
 import numpy as np
+import os    
+    
+class _RecommenderGraph(object):
+
+    class _SubGraph(object):
+        
+        class _Port(object):
+            
+            def __init__(self):
+                self.s = None
+        
+        class _InPort(_Port):
+            
+            def assign(self, subgraph, key):
+                self.s = {'subgraph':subgraph, 'key':key}
+            
+            def retrieve(self):
+                if self.s is None:
+                    return None
+                else:
+                    return self.s['subgraph'][self.s['key']]
+        
+        class _OutPort(_Port):
+            
+            def assign(self, tensor):
+                self.s = tensor
+            
+            def retrieve(self):
+                return self.s
+
+        def __init__(self, rec_graph):
+
+            self._super = rec_graph
+            self._port_store = dict()
+            self._build_funcs = []
+            self._build_mode = False
+            self._is_built = False
+            
+        def __getitem__(self, key):
+            
+            assert key in self._port_store, "%s port is not found." % key
+            if self._build_mode:
+                assert self._is_built, "[Build Error] Getting a value from an unconstructed graph."
+                return self._port_store[key].retrieve()
+            else:
+                assert isinstance(self._port_store[key], self._OutPort), "[Connect Error] Getting a value from the %s in-port" % key
+                return self, key
+        
+        def __setitem__(self, key, value):
+            
+            assert key in self._port_store, "%s port is not found." % key
+            if self._build_mode:
+                assert isinstance(self._port_store[key], self._OutPort), "[Build Error] Assigning a value to the %s in-port" % key
+                self._port_store[key].assign(value)
+            else:
+                assert isinstance(self._port_store[key], self._InPort), "[Connect Error] Assigning a value to the %s out-port" % key
+                self._port_store[key].assign(value[0], value[1])
+                
+        def __call__(self, build_func=None, ins=[], outs=[]):
+            
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
+            
+            self._port_store = {}
+            self._build_funcs = []
+            
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            if build_func is None:
+                def add_build_func(build_func):
+                    self._build_funcs.append(build_func)
+                    return build_func
+                return add_build_func
+            else:
+                self._build_funcs.append(build_func)
+                return build_func
+        
+        def extend(self, build_func=None, ins=[], outs=[]):
+            
+            assert isinstance(ins, list), "ins should be a list of strings."
+            assert isinstance(outs, list), "outs should be a list of strings"
+            
+            for in_ in ins:
+                self._port_store[in_] = self._InPort()
+            for out_ in outs:
+                self._port_store[out_] = self._OutPort()
+            
+            if build_func is None:
+                def add_build_func(build_func):
+                    self._build_funcs.append(build_func)
+                    return build_func
+                return add_build_func
+            else:
+                self._build_funcs.append(build_func)
+                return build_func
+        
+        def get_intrinsics(self):
+            
+            return self._port_store, self._build_funcs
+            
+        def copy(self, subgraph):
+            
+            self._port_store, self._build_funcs = subgraph.get_intrinsics()
+        
+        def ready(self):
+            
+            self._build_mode = True
+            
+        def build(self):
+            if not self._is_built:
+                self._is_built = True
+                for build_func in self._build_funcs:
+                    build_func(self)
+        
+        def register_global_input_mapping(self, input_mapping, identifier='default'):
+
+            self._super.register_input_mapping(input_mapping, identifier)
+        
+        def update_global_input_mapping(self, update_input_mapping, identifier='default'):
+            
+            self._super.update_input_mapping(update_input_mapping, identifier)
+
+        def register_global_operation(self, operation, identifier='default'):
+            
+            self._super.register_operation(operation, identifier)
+
+        def register_global_loss(self, loss, identifier='default'):
+
+            self._super.register_loss(loss, identifier)
+
+        def register_global_output(self, output, identifier='default'):
+            
+            self._super.register_output(output, identifier)
+        
+        def get_global_input_mapping(self, identifier='default'):
+
+            self._super.get_input_mapping(identifier)
+
+        def get_global_operations(self, identifier='default'):
+
+            return self._super.get_operations(identifier)
+
+        def get_global_losses(self, identifier='default'):
+
+            return self._super.get_losses(identifier)
+            
+        def get_global_outputs(self, identifier='default'):
+
+            return self._super.get_outputs(identifier)
+    
+    class _Connector(object):
+        
+        def __init__(self, global_graph):
+            
+            self._global_graph = global_graph
+            self._connect_funcs = []
+        
+        def __call__(self, connect_func=None):
+            
+            self._connect_funcs = []
+            if connect_func is None:
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def extend(self, connect_func=None):
+            
+            if connect_func is None:
+                def add_connect_func(connect_func):
+                    self._connect_funcs.append(connect_func)
+                    return connect_func
+                return add_connect_func
+            else:
+                self._connect_funcs.append(connect_func)
+            return connect_func
+        
+        def build(self):
+            
+            assert len(self._connect_funcs) > 0, "Graph connection is not specified"
+            for connect_func in self._connect_funcs:
+                connect_func(self._global_graph)
+            
+    def __init__(self):
+        
+        self._tf_graph = tf.Graph()
+        self.inputgraph = self._SubGraph(self)
+        self.usergraph = self._SubGraph(self)
+        self.itemgraph = self._SubGraph(self)
+        self.contextgraph = self._SubGraph(self)
+        self.fusiongraph = self._SubGraph(self)
+        self.interactiongraph = self._SubGraph(self)
+        self.optimizergraph = self._SubGraph(self)
+
+        self.connector = self._Connector(self)
+        
+        self._operation_identifier_set = set()
+        self._loss_identifier_set = set()
+        self._output_identifier_set = set()
+        self._input_mapping_dict = dict()
+    
+    def __setattr__(self, name, value):
+        
+        if name in set(['inputgraph', 'usergraph', 'itemgraph', 'contextgraph',
+                      'fusiongraph', 'interactiongraph', 'optimizergraph']):
+            if name in self.__dict__:
+                self.__dict__[name].copy(value)
+            else:
+                self.__dict__[name] = value
+        else:
+            self.__dict__[name] = value
+
+    def register_input_mapping(self, input_mapping, identifier='default'):
+
+        self._input_mapping_dict[identifier] = input_mapping
+    
+    def update_input_mapping(self, update_input_mapping, identifier='default'):
+        
+        self._input_mapping_dict[identifier].update(update_input_mapping)
+
+    def register_operation(self, operation, identifier='default'):
+
+        self._operation_identifier_set.add(identifier)
+        tf.add_to_collection('openrec.recommender.operations.'+identifier, operation)
+
+    def register_loss(self, loss, identifier='default'):
+
+        self._loss_identifier_set.add(identifier)
+        tf.add_to_collection('openrec.recommender.losses.'+identifier, loss)
+
+    def register_output(self, output, identifier='default'):
+        
+        self._output_identifier_set.add(identifier)
+        tf.add_to_collection('openrec.recommender.outputs.'+identifier, output)
+    
+    @property
+    def tf_graph(self):
+        
+        return self._tf_graph
+
+    def build(self):
+
+         with self._tf_graph.as_default():
+            
+            self.connector.build()
+                
+            self.inputgraph.ready()
+            self.usergraph.ready()
+            self.itemgraph.ready()
+            self.contextgraph.ready()
+            self.fusiongraph.ready()
+            self.interactiongraph.ready()
+            self.optimizergraph.ready()
+            
+            with tf.variable_scope('inputgraph', reuse=tf.AUTO_REUSE):
+                self.inputgraph.build()
+            with tf.variable_scope('usergraph', reuse=tf.AUTO_REUSE):
+                self.usergraph.build()
+            with tf.variable_scope('itemgraph', reuse=tf.AUTO_REUSE):
+                self.itemgraph.build()
+            with tf.variable_scope('contextgraph', reuse=tf.AUTO_REUSE):
+                self.contextgraph.build()
+            with tf.variable_scope('fusiongraph', reuse=tf.AUTO_REUSE):
+                self.fusiongraph.build()
+            with tf.variable_scope('interactiongraph', reuse=tf.AUTO_REUSE):
+                self.interactiongraph.build()
+            with tf.variable_scope('optimizergraph', reuse=tf.AUTO_REUSE):  
+                self.optimizergraph.build()
+        
+    def get_input_mapping(self, identifier='default'):
+
+        return self._input_mapping_dict[identifier]
+
+    def get_operations(self, identifier='default'):
+        
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.operations.'+identifier)
+
+    def get_losses(self, identifier='default'):
+        
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.losses.'+identifier)
+
+    def get_outputs(self, identifier='default'):
+
+        with self._tf_graph.as_default():
+            return tf.get_collection('openrec.recommender.outputs.'+identifier)
 
 class Recommender(object):
-    
-    """
-    The Recommender is the OpenRec abstraction [1]_ for recommendation algorithms.
 
-    Parameters
-    ----------
-    batch_size: int
-        Training batch size. The structure of a training instance varies across recommenders.
-    max_user: int
-        Maximum number of users in the recommendation system.
-    max_item: int
-        Maximum number of items in the recommendation system.
-    extra_interactions_funcs: list, optional
-        List of functions to build extra interaction modules.
-    extra_fusions_funcs: list, optional
-        List of functions to build extra fusion modules.
-    test_batch_size: int, optional
-        Batch size for testing and serving. The structure of a testing/serving instance varies across recommenders.
-    l2_reg: float, optional
-        Weight for L2 regularization, i.e., weight decay.
-    opt: 'SGD'(default) or 'Adam', optional
-        Optimization algorithm, SGD: Stochastic Gradient Descent.
-    init_dict: dict, optional
-        Key-value pairs for initial parameter values.
-    sess_config: tensorflow.ConfigProto(), optional
-        Tensorflow session configuration.
+    def __init__(self, _sentinel=None, init_model_dir=None, save_model_dir=None, train=True, serve=False):
 
-    Notes  
-    -----
-    .. highlight:: python
-
-    The recommender abstraction defines the procedures to build a recommendation computational graph and exposes 
-    interfaces for training and evaluation. During training, for each batch, the :code:`self.train` function should be 
-    called with a :code:`batch_data` input,
-    
-    .. code:: python
-
-        recommender_instance.train(batch_data)
-
-    and during testing/serving, the *serve* function should be called with a *batch_data* input:
-
-    .. code:: python
-
-        recommender_instance.serve(batch_data)
-
-    A recommender contains four major components: **inputs**, **extractions**, **fusions**, and 
-    **interactions**. The figure below shows the order of which each related function is called. The 
-    :code:`train` parameter in each function is used to build different computational graphs for training 
-    and serving.
-
-    .. image:: recommender.png
-        :scale: 50 %
-        :alt: The structure of the recommender abstraction
-        :align: center
-
-    A new recommender class should be inherent from the *Recommender* class. Follow the steps below to override 
-    corresponding functions. To make a recommender easily extensible, it is **NOT** recommended to override functions 
-    :code:`self._build_inputs`, :code:`self._build_fusions`, and :code:`self._build_interactions`. 
-    
-        * **Define inputs.** Override functions :code:`self._build_user_inputs`, :code:`self._build_item_inputs`, \
-        and :code:`self._build_extra_inputs` to define inputs for users', items', and contextual data sources \
-        respectively. An input should be defined using the *input* function as follows.
-    
-        .. code:: python
-
-            self._add_input(name='input_name', dtype='float32', shape=data_shape, train=True)
-
-        * **Define input mappings.** Override the function :code:`self._input_mappings` to feed a *batch_data* into \
-        the defined inputs. The mapping should be specified using a python dict where a *key* corresponds to an input \
-        object retrieved by :code:`self._get_input(input_name, train=train)`, and a *value* corresponds to a \
-        :code:`batch_data` value.
-
-        * **Define extraction modules.** Override functions :code:`self._build_user_extractions`, \
-        :code:`self._build_item_extractions`, and :code:`self._build_extra_extractions` to define extraction \
-        modules for users, items, and extra contexts respectively. Use :code:`self._add_module` to construct a \
-        module, and :code:`self._get_input`/:code:`self._get_module` to retrieve an existing input/module.
-
-        * **Define fusion modules.** Override the function :code:`self._build_default_fusions` to build fusion modules.\
-        Custom functions can also be used as long as they are included in the input :code:`extra_fusions_funcs` list. \
-        Use :code:`self._add_module` to construct a module, and :code:`self._get_input`/:code:`self._get_module` to \
-        retrieve an existing input/module.
-
-        * **Define interaction modules.** Override the fuction :code:`build_default_interactions` to build interaction \
-        modules. Custom functions can also be used as long as they are included in the input \
-        :code:`extra_interactions_funcs` list. Use :code:`self._add_module` to construct a module, and \
-        :code:`self._get_input`/:code:`self._get_module` to retrieve an existing input/module.
-
-    When (:code:`train==False`), a variable named :code:`self._scores` should be defined for *user-item scores*. \
-    Such a score is higher if an item should be ranked higher in the recommendation list.
-
-    References
-    ----------
-    .. [1] Yang, L., Bagdasaryan, E., Gruenstein, J., Hsieh, C., and Estrin, D., 2018, June. 
-        OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.
-        In Proceedings of WSDM'18, February 5-9, 2018, Marina Del Rey, CA, USA.
-    """
-
-    def __init__(self, batch_size, max_user, max_item, extra_interactions_funcs=[],
-                    extra_fusions_funcs=[], test_batch_size=None, l2_reg=None, opt='SGD', lr=None, 
-                    init_dict=None, sess_config=None):
+        self._train = train
+        self._serve = serve
+        self._init_model_dir = init_model_dir
+        self._save_model_dir = save_model_dir
         
-        self._str_to_dtype = {
-            'float16': tf.float16,
-            'float32': tf.float32,
-            'float64': tf.float64,
-            'int8': tf.int8,
-            'int16': tf.int16,
-            'int32': tf.int32,
-            'int64': tf.int64,
-            'bool': tf.bool,
-            'string': tf.string
-        }
+        self._flag_updated = False
+        self._flag_isbuilt = False
         
-        self._batch_size = batch_size
-        self._test_batch_size = test_batch_size
-        self._max_user = max_user
-        self._max_item = max_item
-        self._l2_reg = l2_reg
-        self._opt = opt
+        self.traingraph = _RecommenderGraph()
+        self.servegraph = _RecommenderGraph()
 
-        if lr is None:
-            if self._opt == 'Adam':
-                self._lr = 0.001
-            elif self._opt == 'SGD':
-                self._lr = 0.005
+        self.T = self.traingraph
+        self.S = self.servegraph
+    
+    def _generate_feed_dict(self, batch_data, input_map):
+
+        feed_dict = dict()
+        
+        if type(batch_data) is np.ndarray:
+            keys = batch_data.dtype.names
+        elif type(batch_data) is dict:
+            keys = batch_data.keys()
         else:
-            self._lr = lr
-
-        self._loss_nodes = []
-        self._inputs_store = {'train':{}, 'serving': {}}
-        self._modules_store = {'train':{}, 'serving': {}}
-        
-        self._interactions_funcs = [self._build_default_interactions] + extra_interactions_funcs
-        self._fusions_funcs = [self._build_default_fusions] + extra_fusions_funcs
-
-        self._build_training_graph()
-        self._build_post_training_graph()
-        self._build_serving_graph()
-        if sess_config is None:
-            self._sess = tf.Session()
-        else:
-            self._sess = tf.Session(config=sess_config)
-        self._initialize(init_dict)
-        self._saver = tf.train.Saver(max_to_keep=None)
-
-    
-    def train(self, batch_data):
-
-        """Train the model with an input batch_data.
-
-        Parameters
-        ----------
-        batch_data: dict
-            A batch of training data.
-        """
-
-        results = self._sess.run([self._train_op, self._loss] + self._post_training_ops,
-                                 feed_dict=self._input_mappings(batch_data, train=True))
-        return results[1]
-
-    def serve(self, batch_data):
-
-        """Evaluate the model with an input batch_data.
-
-        Parameters
-        ----------
-        batch_data: dict
-            A batch of testing or serving data.
-        """
-
-        scores = self._sess.run(self._scores, 
-                            feed_dict=self._input_mappings(batch_data, train=False))
-
-        return scores
-
-    def compute_module_outputs(self, name, batch_data, train=True):
-
-        """Compute the outputs of a module, specified by the name and the train flag.
-
-        Parameters
-        ----------
-        name: str
-            The module name.
-        batch_data: dict
-            A batch of training or serving data.
-        train: bool
-            Specify the computational graph (train/serving) to compute outputs.
-        
-        Returns
-        -------
-        A list of Numpy arrays
-            The outputs of the specified module.
-        """
-        
-        module = self._get_module(name=name, train=train)
-        
-        if len(module.get_outputs()) == 0:
-            return []
-        
-        return self._sess.run(module.get_outputs(), feed_dict=self._input_mappings(batch_data, train=train))
-
-    def compute_module_loss(self, name, batch_data, train=True):
-
-        """Compute the loss of a module, specified by the name and the train flag.
-
-        Parameters
-        ----------
-        name: str
-            The module name.
-        batch_data: dict
-            A batch of training or serving data.
-        train: bool
-            Specify the computational graph (train/serving) to compute loss.
-        
-        Returns
-        -------
-        Numpy array
-            The loss of the specified module.
-        """
-
-        module = self._get_module(name=name, train=train)
-        
-        if type(module.get_loss()) == float:
-            return module.get_loss()
-
-        return self._sess.run(module.get_loss(), feed_dict=self._input_mappings(batch_data, train=train))
-
-    def save(self, save_dir, step):
-
-        """Save a trained model to disk.
-
-        Parameters
-        ----------
-        save_str: str
-            Path to save the model.
-        step: int
-            training step.
-        """
-
-        self._saver.save(self._sess, save_dir, global_step=step)
-
-    def load(self, load_dir):
-
-        """Load a saved model from disk.
-
-        Parameters
-        ----------
-        load_str: str
-            Path to the saved model.
-        """
-
-        self._saver.restore(self._sess, load_dir)
-    
-    def _add_module(self, name, module, train_loss=None, train=True):
-        
-        """Add a module - overwrite if :code:`name` exists.
-
-        Parameters
-        ----------
-        name: str
-            Module name.
-        module: Module
-            Module instance.
-        train_loss: bool, optional
-            Whether or not to include the output loss in the training loss (Default: include losses from all modules).
-        train: bool, optional
-            Specify the computational graph (train/serving) to add the module.
-        """
-        if train_loss is None:
-            train_loss = train
+            assert False, "Invalid batch data format"
             
-        if train:
-            self._modules_store['train'][name] = module
-        else:
-            self._modules_store['serving'][name] = module
+        for key in keys:
+            feed_dict[input_map[key]] = batch_data[key]
+        return feed_dict
+
+    def train(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
+
+        assert self._train, "Train is disabled"
+        assert self._flag_isbuilt, "Train graph is not built"
         
-        if train_loss:
-            self._loss_nodes.append(module)
+        if input_mapping_id is None:
+            feed_dict = {}
+        else:
+            feed_dict = self._generate_feed_dict(batch_data, 
+                                            self.T.get_input_mapping(input_mapping_id))
+        
+        if operations_id is None:
+            operations = []
+        else:
+            operations = self.T.get_operations(operations_id)
+        
+        if losses_id is None:
+            losses = []
+        else:
+            losses = self.T.get_losses(losses_id)
+            
+        if outputs_id is None:
+            outputs = []
+        else:
+            outputs = self.T.get_outputs(outputs_id)
+        
+        results = self._tf_train_sess.run(operations+losses+outputs,
+                                 feed_dict=feed_dict)
+        
+        return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
+                      'outputs': results[-len(outputs):]}
+        
+        self._flag_updated = True
+        return return_dict
     
-    def _get_module(self, name, train=True):
+    def train_inspect_ports(self, batch_data, ports=[], input_mapping_id='default'):
         
-        """Retrieve a module.
+        assert self._train, "Train is disabled"
+        assert self._flag_isbuilt, "Train graph is not built"
+        
+        feed_dict = self._generate_feed_dict(batch_data, 
+                                            self.T.get_input_mapping(input_mapping_id))
+        
+        results = self._tf_train_sess.run(ports,
+                                 feed_dict=feed_dict)
+        return results
+        
+    def serve(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
 
-        Parameters
-        ----------
-        name: str
-            The module name.
-        train: bool
-            Specify training or serving graph.
-
-        Returns
-        -------
-        Module
-            The module specified by the name and the :code:`train` flag.
-        """
-        if train:
-            return self._modules_store['train'][name]
+        assert self._serve, "serve is disabled"
+        assert self._flag_isbuilt, "serve graph is not built"
+        
+        if self._flag_updated:
+            self._save_and_load_for_serve()
+            self._flag_updated = False
+        
+        if input_mapping_id is None:
+            feed_dict = {}
         else:
-            return self._modules_store['serving'][name]
+            feed_dict = self._generate_feed_dict(batch_data, self.S.get_input_mapping(input_mapping_id))
+        
+        if operations_id is None:
+            operations = []
+        else:
+            operations = self.S.get_operations(operations_id)
+        
+        if losses_id is None:
+            losses = []
+        else:
+            losses = self.S.get_losses(losses_id)
+            
+        if outputs_id is None:
+            outputs = []
+        else:
+            outputs = self.S.get_outputs(outputs_id)
+        results = self._tf_serve_sess.run(operations+losses+outputs, 
+                            feed_dict=feed_dict)
+
+        return {'losses': results[len(operations):len(operations)+len(losses)], 
+                'outputs': results[-len(outputs):]}
     
-    def _add_input(self, name, dtype='float32', shape=None, train=True):
+    def serve_inspect_ports(self, batch_data, ports=[], input_mapping_id='default'):
         
-        """Add an input - overwrite if :code:`name` exists.
-
-        Parameters
-        ----------
-        name: str
-            The input name.
-        dtype: str
-            Data type: "float16", "float32" (default), "float64", "int8", "int16", "int32", "int64", "bool", "string" \
-            or "none".
-        shape: list or tuple
-            Input shape.
-        train: bool
-            Specify training or serving graph.
-        """
+        assert self._serve, "serve graph is disabled"
+        assert self._flag_isbuilt, "serve graph is not built"
         
-        if train:
-            if dtype=='none':
-                self._inputs_store['train'][name] = None
-            else:
-                self._inputs_store['train'][name] = self._input(dtype=dtype, shape=shape, name=name+'_train')
+        if self._flag_updated:
+            self._save_and_load_for_serve()
+            self._flag_updated = False
+        
+        if input_mapping_id is None:
+            feed_dict = {}
         else:
-            if dtype=='none':
-                self._inputs_store['serving'][name] = None
-            else:
-                self._inputs_store['serving'][name] = self._input(dtype=dtype, shape=shape, name=name+'_serving')
+            feed_dict = self._generate_feed_dict(batch_data, 
+                                            self.S.get_input_mapping(input_mapping_id))
+        
+        results = self._tf_serve_sess.run(ports,
+                                 feed_dict=feed_dict)
+        return results
     
-    def _get_input(self, name, train=True):
+    def save(self, save_model_dir=None, global_step=None):
         
-        """Retrieve an input.
-
-        Parameters
-        ----------
-        name: str
-            Input name.
-        train: bool
-            Specify training or serving graph.
-
-        Returns
-        -------
-        Tensorflow placeholder
-            The input specified by the name and the :code:`train` flag.
-        """
-        if train:
-            return self._inputs_store['train'][name]
-        else:
-            return self._inputs_store['serving'][name]
-        
-    def _initialize(self, init_dict):
-
-        """Initialize model parameters (do NOT override).
-
-        Parameters
-        ----------
-        init_dict: dict
-            Key-value pairs for initial parameter values.
-
-        """
-        if init_dict is None:
-            self._sess.run(tf.global_variables_initializer())
-        else:
-            self._sess.run(tf.global_variables_initializer(), feed_dict=init_dict)
-
+        if save_model_dir is None:
+            save_model_dir = self._save_model_dir
+        with self.traingraph.tf_graph.as_default():
+            self._tf_train_saver.save(self._tf_train_sess, 
+                                         os.path.join(save_model_dir, 'model.ckpt'),
+                                        global_step=global_step)
     
-    def _input(self, dtype='float32', shape=None, name=None):
+    def restore(self, save_model_dir=None, restore_train=False, restore_serve=False):
         
-        """Define an input for the recommender.
-
-        Parameters
-        ----------
-        dtype: str
-            Data type: "float16", "float32", "float64", "int8", "int16", "int32", "int64", "bool", or "string".
-        shape: list or tuple
-            Input shape.
-        name: str
-            Name of the input.
-
-        Returns
-        -------
-        Tensorflow placeholder
-            Defined tensorflow placeholder.
-        """
-        if dtype not in self._str_to_dtype:
-            raise ValueError
-        else:
-            return tf.placeholder(self._str_to_dtype[dtype], shape=shape, name=name)
-
-    def _input_mappings(self, batch_data, train):
+        if save_model_dir is None:
+            save_model_dir = self._save_model_dir
+        if restore_train:
+            assert self._train is not None, 'train is not enabled.'
+            with self.traingraph.tf_graph.as_default():
+                self._optimistic_restore(self._tf_train_sess, os.path.join(save_model_dir, 'model.ckpt'))
+        if restore_serve:
+            assert self._serve is not None, 'serve is not enabled.'
+            with self.servegraph.tf_graph.as_default():
+                self._optimistic_restore(self._tf_serve_sess, os.path.join(save_model_dir, 'model.ckpt'))
+            
+    def _save_and_load_for_serve(self):
         
-        """Define mappings from input training batch to defined inputs.
-
-        Parameters
-        ----------
-        batch_data: dict
-            A training batch.
-        train: bool
-            An indicator for training or servining phase.
-
-        Returns
-        -------
-        dict
-            The mapping where a *key* corresponds to an input object, and a *value* corresponds to a \
-            :code:`batch_data` value.
-        """
-
-        return {}
-
-    def _build_inputs(self, train=True):
-
-        """Call sub-functions to build inputs (do NOT override).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-        
-        self._build_user_inputs(train=train)
-        self._build_item_inputs(train=train)
-        self._build_extra_inputs(train=train)
-
-    def _build_user_inputs(self, train=True):
-
-        """Build inputs for users' data sources (should be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_item_inputs(self, train=True):
-        
-        """Build inputs for items' data sources (should be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_extra_inputs(self, train=True):
-
-        """Build inputs for contextual data sources (should be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_extractions(self, train=True):
-
-        """Call sub-functions to build extractions (do NOT override).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-        
-        self._build_user_extractions(train=train)
-        self._build_item_extractions(train=train)
-        self._build_extra_extractions(train=train)
-        
-    def _build_user_extractions(self, train=True):
-
-        """Build extraction modules for users' data sources (should be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_item_extractions(self, train=True):
-
-        """Build extraction modules for items' data sources (should be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_extra_extractions(self, train=True):
-
-        """Build extraction modules for contextual data sources (may be overriden)
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_fusions(self, train=True):
-
-        """Call sub-functions to build fusions (do NOT override).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        for func in self._fusions_funcs:
-            func(train)
+        assert self._save_model_dir is not None, 'save_model_dir is not specified'
+        if self._train:
+            self.save()
+        if self._serve:
+            self.restore(restore_serve=True)
     
-    def _build_default_fusions(self, train=True):
-
-        """Build default fusion modules (may be overriden).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_interactions(self, train=True):
-
-        """Call sub-functions to build interactions (do NOT override).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
+    def _optimistic_restore(self, session, save_file):
         
-        for func in self._interactions_funcs:
-            func(train)
-
-    def _build_default_interactions(self, train=True):
-
-        """Build default interaction modules (may be overriden).
-
-        Parameters
-        ----------
-        train: bool
-            An indicator for training or servining phase.
-
-        """
-
-        pass
-
-    def _build_post_training_ops(self):
-
-        """Build post-training operators (may be overriden).
-
-        Returns
-        -------
-        list
-            A list of Tensorflow operators.
-        """
-        return []
-
-    def _build_optimizer(self):
-
-        """Build an optimizer for model training.
-        """
+        reader = tf.train.NewCheckpointReader(save_file)
+        saved_shapes = reader.get_variable_to_shape_map()
         
-        self._loss = tf.add_n([node.get_loss() for node in self._loss_nodes])
-
-        if self._opt == 'SGD':
-            optimizer = tf.train.GradientDescentOptimizer(self._lr)
-        else:
-            optimizer = tf.train.AdamOptimizer(learning_rate=self._lr)
-
-        grad_var_list = optimizer.compute_gradients(self._loss)
-        self._train_op = optimizer.apply_gradients(self._grad_post_processing(grad_var_list))
-
-    def _grad_post_processing(self, grad_var_list):
-
-        """Post-process gradients before updating variables.
+        restore_vars = []
+        for var in tf.global_variables():
+            var_name = var.name.split(':')[0]
+            if var_name in saved_shapes and len(var.shape) > 0:
+                if var.get_shape().as_list() == saved_shapes[var_name]:
+                    restore_vars.append(var)
         
-        Parameters
-        ----------
-        grad_var_list: list
-            A list of tuples (gradients, variable).
+        saver = tf.train.Saver(restore_vars)
+        saver.restore(session, save_file)
+            
+    def build(self):
 
-        Returns
-        -------
-        list
-            A list of updated tuples (updated gradients, variables).
-        """
+        if self._train:
+            self.traingraph.build()
+            with self.traingraph.tf_graph.as_default():
+                config = tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                self._tf_train_sess = tf.Session(config=config)
+                self._tf_train_sess.run(tf.global_variables_initializer())
+                self._tf_train_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
 
-        return grad_var_list
-
-    def _build_training_graph(self):
-
-        """Call sub-functions to build training graph (do NOT override).
-        """
-
-        self._loss_nodes = []
-        self._build_inputs(train=True)
-        self._build_extractions(train=True)
-        self._build_fusions(train=True)
-        self._build_interactions(train=True)
-        self._build_optimizer()
-
-    def _build_post_training_graph(self):
-
-        """Build post-training graph (do NOT override).
-        """
-
-        if hasattr(self, '_train_op'):
-            self._post_training_ops = []
-            with tf.control_dependencies([self._train_op]):
-                self._post_training_ops += self._build_post_training_ops()
-
-    def _build_serving_graph(self):
-
-        """Call sub-functions to build serving graph (do NOT override).
-        """
-
-        self._build_inputs(train=False)
-        self._build_extractions(train=False)
-        self._build_fusions(train=False)
-        self._build_interactions(train=False)
+        if self._serve:
+            self.servegraph.build()
+            with self.servegraph.tf_graph.as_default():
+                config = tf.ConfigProto()
+                config.gpu_options.allow_growth=True
+                self._tf_serve_sess = tf.Session(config=config)
+                self._tf_serve_sess.run(tf.global_variables_initializer())
+                self._tf_serve_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+        
+        if self._init_model_dir is not None:
+            self.restore(save_model_dir=self._init_model_dir,
+                        restore_train=self._train,
+                        restore_serve=self._serve)
+        
+        self._flag_isbuilt = True
+        
+        return self
+    
+    def isbuilt(self):
+        
+        return self._flag_isbuilt

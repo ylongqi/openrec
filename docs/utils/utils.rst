@@ -5,7 +5,7 @@ utils package
 .. toctree::
    :maxdepth: 2
 
-    Evaluators <openrec.utils.evaluators>
-    Samplers <openrec.utils.samplers>
-    Dataset <openrec.utils.dataset>
-    ImplicitDataset <openrec.utils.implicit_dataset>
+    Evaluators <openrec.legacy.utils.evaluators>
+    Samplers <openrec.legacy.utils.samplers>
+    Dataset <openrec.legacy.utils.dataset>
+    ImplicitDataset <openrec.legacy.utils.implicit_dataset>

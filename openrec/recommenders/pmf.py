@@ -4,8 +4,11 @@ from openrec.modules.interactions import PointwiseMSE
 import tensorflow as tf
 
 def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=1.0, b=1.0, l2_reg=None,
-    init_model_dir=None, save_model_dir='Recommender/', train=True, serve=False):
-
+    init_model_dir=None, save_model_dir='Recommender/', serve_mode='pairwise', train=True, serve=False):
+    
+    if serve:
+        assert serve_mode in set(('pairwise', 'all')), "serve_mode %s is not supported." % serve_mode
+    
     rec = Recommender(init_model_dir=init_model_dir, save_model_dir=save_model_dir, 
                     train=train, serve=serve)
     
@@ -24,9 +27,14 @@ def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=
     @s.inputgraph(outs=['user_id', 'item_id'])
     def serve_input_graph(subgraph):
         subgraph['user_id'] = tf.placeholder(tf.int32, shape=[None], name='user_id')
-        subgraph['item_id'] = tf.placeholder(tf.int32, shape=[None], name='item_id')
-        subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
+        if serve_mode == 'pairwise':
+            subgraph['item_id'] = tf.placeholder(tf.int32, shape=[None], name='item_id')
+            subgraph.register_global_input_mapping({'user_id': subgraph['user_id'],
                                 'item_id': subgraph['item_id']})
+        else:
+            subgraph['item_id'] = tf.range(total_items, dtype=tf.int32)
+            subgraph.register_global_input_mapping({'user_id': subgraph['user_id']})
+        
 
     @t.usergraph(ins=['user_id'], outs=['user_vec'])
     @s.usergraph(ins=['user_id'], outs=['user_vec'])
@@ -61,7 +69,7 @@ def PMF(batch_size, dim_user_embed, dim_item_embed, total_users, total_items, a=
                      item_vec=subgraph['item_vec'],
                      item_bias=subgraph['item_bias'], 
                      a=a, b=b, sigmoid=False,
-                    train=False, subgraph=subgraph, scope='PointwiseMSE')
+                    train=False, subgraph=subgraph, serve_mode=serve_mode, scope='PointwiseMSE')
     
     @t.optimizergraph
     def optimizer_graph(subgraph):

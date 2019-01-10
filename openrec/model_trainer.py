@@ -37,23 +37,28 @@ class ModelTrainer(object):
         for evaluator in self._eval_manager.evaluators:
             metric_results[evaluator.name] = []
         
-        completed_user_count = 0
-        pos_items, batch_data = eval_sampler.next_batch()
+        batch_data = eval_sampler.next_batch()
         while batch_data is not None:
-            all_scores = []
-            all_pos_items = []
-            while len(batch_data) > 0:
-                all_scores.append(self._eval_iter_func(self._model, batch_data))
-                all_pos_items += pos_items
-                pos_items, batch_data = eval_sampler.next_batch()
+            scores = self._eval_iter_func(self._model, batch_data['input'])
+            pos_mask = batch_data['pos_mask']
+            excl_mask = batch_data['excl_mask'] if 'excl_mask' in batch_data else None
+            
+            result = {}
+            for evaluator in self._evaluators:
+                result[evaluator.name] = evaluator.compute(pos_mask=pos_mask, 
+                                                           pred=scores, 
+                                                           excl_mask=excl_mask)
+            
+            '''
             result = self._eval_manager.full_eval(pos_samples=all_pos_items,
                                                   excl_pos_samples=[],
                                                 predictions=np.concatenate(all_scores, axis=0))
-            completed_user_count += 1
+            '''
+            completed_user_count = batch_data['progress']
             print('...Evaluated %d users' % completed_user_count, end='\r')
             for key in result:
                 metric_results[key].append(result[key])
-            pos_items, batch_data = eval_sampler.next_batch()
+            batch_data = eval_sampler.next_batch()
             
         return metric_results
 
@@ -61,6 +66,7 @@ class ModelTrainer(object):
         
         acc_loss = 0
         self._eval_manager = EvalManager(evaluators=evaluators)
+        self._evaluators = evaluators
         
         train_sampler.reset()
         for sampler in eval_samplers:
@@ -69,8 +75,13 @@ class ModelTrainer(object):
         print(colored('[Training starts, total_iter: %d, eval_iter: %d, save_iter: %d]' \
                           % (total_iter, eval_iter, save_iter), 'blue'))
         
+        epoch = 0
         for _iter in range(total_iter):
             batch_data = train_sampler.next_batch()
+            if batch_data is None:
+                epoch += 1
+                print('##### %d epoch completed #####' % epoch)
+                continue
             loss = self._train_iter_func(self._model, batch_data)
             acc_loss += loss
             self._trained_it += 1
@@ -87,7 +98,7 @@ class ModelTrainer(object):
                     sys.stdout.flush()
                     eval_results = self._evaluate(sampler)
                     for key, result in eval_results.items():
-                        average_result = np.mean(result, axis=0)
+                        average_result = np.mean(np.vstack(result), axis=0)
                         if type(average_result) is np.ndarray:
                             print(colored('..(dataset: %s)' % sampler.name, 'green'), \
                                 key, ' '.join([str(s) for s in average_result]))

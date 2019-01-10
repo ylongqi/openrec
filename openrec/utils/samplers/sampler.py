@@ -10,8 +10,10 @@ class _Sampler(Process):
         super(_Sampler, self).__init__()
 
     def run(self):
-        for input_npy in self._generate_batch(self._dataset):
-            self._q.put(input_npy, block=True)
+        while True:
+            for batch_data in self._generate_batch(self._dataset):
+                self._q.put(batch_data, block=True)
+            self._q.put(None, block=True)
                 
 class Sampler(object):
     
@@ -31,6 +33,7 @@ class Sampler(object):
         
         if not self._start:
             self.reset()
+        # self._auto_restart_dead_runners()
         
         return self._q.get(block=True)
         
@@ -46,8 +49,26 @@ class Sampler(object):
         self._q = Queue(maxsize=self._num_process)
             
         for i in range(self._num_process):
-            runner = _Sampler(self._dataset, self._q, self._generate_batch)
-            runner.daemon = True
-            runner.start()
-            self._runner_list.append(runner)
+            runner = self._start_a_new_runner()
+            
         self._start = True
+    
+    def _auto_restart_dead_runners(self):
+        
+        dead_runners = []
+        for runner in self._runner_list:
+            if runner.is_finished():
+                dead_runners.append(runner)
+        
+        for runner in dead_runners:
+            runner.terminate()
+            self._runner_list.remove(runner)
+            runner = self._start_a_new_runner()
+            print('restart...')
+            
+    def _start_a_new_runner(self):
+        
+        runner = _Sampler(self._dataset, self._q, self._generate_batch)
+        runner.daemon = True
+        runner.start()
+        self._runner_list.append(runner)

@@ -8,7 +8,7 @@ class EvalManager(object):
 
     def _full_rank(self, pos_samples, excl_pos_samples, predictions):
 
-        
+        pos_samples_set = set(pos_samples)
         pos_samples = np.array(pos_samples, dtype=np.int32)
         pos_predictions = predictions[pos_samples]
 
@@ -17,12 +17,12 @@ class EvalManager(object):
 
         pos_samples_len = len(pos_samples)
         for ind in range(len(predictions)):
-            if ind not in excl_pos_samples_set:
+            if ind not in excl_pos_samples_set and ind not in pos_samples_set:
                 for pos_ind in range(pos_samples_len):
                     if pos_predictions[pos_ind] < predictions[ind]:
                         rank_above[pos_ind] += 1
 
-        return rank_above, len(predictions) - len(excl_pos_samples)
+        return rank_above, len(predictions) - len(excl_pos_samples) - len(pos_samples)
 
     def _partial_rank(self, pos_scores, neg_scores):
 

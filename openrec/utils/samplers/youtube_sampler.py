@@ -4,7 +4,6 @@ from openrec.utils.samplers import Sampler
 
 def YouTubeSampler(dataset, batch_size, max_seq_len, user_feature, num_process=5, seed=100, sort=True):
     
-    random.seed(seed)
     def batch(dataset, user_feature=user_feature, max_seq_len=max_seq_len, batch_size=batch_size):
         
         while True:

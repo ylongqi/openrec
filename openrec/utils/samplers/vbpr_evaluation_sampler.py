@@ -5,7 +5,6 @@ import math
 
 def VBPREvaluationSampler(batch_size, dataset, item_vfeature, seed=100):
     
-    random.seed(seed)
     def batch(dataset, batch_size=batch_size, item_vfeature=item_vfeature):
         _, dim_v = item_vfeature.shape
         while True:

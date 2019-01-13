@@ -5,7 +5,6 @@ from openrec.utils.samplers import Sampler
 
 def VBPRPairwiseSampler(dataset, batch_size, item_vfeature, num_process=5, seed=100):
     
-    random.seed(seed)
     def batch(dataset, batch_size=batch_size, 
               item_vfeature=item_vfeature, seed=seed):
         

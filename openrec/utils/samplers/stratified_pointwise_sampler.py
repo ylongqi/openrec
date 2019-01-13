@@ -2,21 +2,21 @@ import numpy as np
 import random
 from openrec.utils.samplers import Sampler
 
-
-def StratifiedPointwiseSampler(dataset, batch_size, pos_ratio=0.5, num_process=5, seed=100):
+def StratifiedPointwiseSampler(batch_size, dataset, pos_ratio=0.5, num_process=5, seed=100):
     
-    random.seed(seed)
-    def batch(dataset, batch_size=batch_size, pos_ratio=pos_ratio, seed=seed):
+    def batch(dataset=dataset, batch_size=batch_size, pos_ratio=pos_ratio):
         
         num_pos = int(batch_size * pos_ratio)
         while True:
-            input_npy = np.zeros(batch_size, dtype=[('user_id', np.int32),
-                                                        ('item_id', np.int32),
-                                                        ('label', np.float32)])
+            _input = {'user_id': np.zeros(batch_size, dtype=np.int32), 
+                      'item_id': np.zeros(batch_size, dtype=np.int32), 
+                      'label': np.zeros(batch_size, dtype=np.float32)}
             
             for ind in range(num_pos):
                 entry = dataset.next_random_record()
-                input_npy[ind] = (entry['user_id'], entry['item_id'], 1.0)
+                _input['user_id'][ind] = entry['user_id']
+                _input['item_id'][ind] = entry['item_id']
+                _input['label'][ind] = 1.0
 
             for ind in range(batch_size - num_pos):
                 user_id = random.randint(0, dataset.total_users()-1)
@@ -24,11 +24,13 @@ def StratifiedPointwiseSampler(dataset, batch_size, pos_ratio=0.5, num_process=5
                 while dataset.is_positive(user_id, item_id):
                     user_id = random.randint(0, dataset.total_users()-1)
                     item_id = random.randint(0, dataset.total_items()-1)
-                input_npy[ind + num_pos] = (user_id, item_id, 0.0)
+                _input['user_id'][ind + num_pos] = user_id
+                _input['item_id'][ind + num_pos] = item_id
+                _input['label'][ind + num_pos] = 0.0
             
-            yield input_npy
+            yield {'input': _input}
     
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=num_process)
+    s = Sampler(generate_batch=batch, num_process=num_process, seed=seed)
     
     return s
     

@@ -4,7 +4,6 @@ from openrec.utils.samplers import Sampler
 
 def TemporalEvaluationSampler(dataset, max_seq_len, seed=100):
     
-    random.seed(seed)
     def batch(dataset, max_seq_len=max_seq_len):
         
         while True:

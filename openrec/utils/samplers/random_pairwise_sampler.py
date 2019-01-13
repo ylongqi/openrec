@@ -1,11 +1,9 @@
-from __future__ import print_function
 import numpy as np
 import random
 from openrec.utils.samplers import Sampler
 
 def RandomPairwiseSampler(dataset, batch_size, num_process=5, seed=100):
     
-    random.seed(seed)
     def batch(dataset, batch_size=batch_size, seed=seed):
         
         while True:

@@ -20,7 +20,9 @@ class Dataset(object):
         self._sortby = sortby
         
         self._index_store = dict()
-        if implicit_negative:
+        self._implicit_negative = implicit_negative
+        self._num_negatives = num_negatives
+        if self._implicit_negative:
             self._index_store['positive'] = dict()
             for ind, entry in enumerate(self._raw_data):
                 if entry['user_id'] not in self._index_store['positive']:
@@ -68,6 +70,12 @@ class Dataset(object):
                                                                     key=lambda item:\
                                              self._raw_data[self._index_store['positive'][user_id][item]][self._sortby],
                                                                     reverse=not asc)
+    def contain_negatives(self):
+        
+        if self._implicit_negative and self._num_negatives is None:
+            return False
+        else:
+            return True
     
     def next_random_record(self):
         

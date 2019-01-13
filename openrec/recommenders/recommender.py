@@ -296,12 +296,19 @@ class _RecommenderGraph(object):
 
 class Recommender(object):
 
-    def __init__(self, _sentinel=None, init_model_dir=None, save_model_dir=None, train=True, serve=False):
+    def __init__(self, 
+                 _sentinel=None, 
+                 init_model_dir=None, 
+                 save_model_dir=None, 
+                 summary_dir=None,
+                 train=True, 
+                 serve=False):
 
         self._train = train
         self._serve = serve
         self._init_model_dir = init_model_dir
         self._save_model_dir = save_model_dir
+        self._summary_dir = summary_dir
         
         self._flag_updated = False
         self._flag_isbuilt = False
@@ -327,7 +334,11 @@ class Recommender(object):
             feed_dict[input_map[key]] = batch_data[key]
         return feed_dict
 
-    def train(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default'):
+    def is_summary(self):
+        
+        return self._summary_dir is not None
+        
+    def train(self, batch_data, input_mapping_id='default', operations_id='default', losses_id='default', outputs_id='default', step=None, write_summary=True):
 
         assert self._train, "Train is disabled"
         assert self._flag_isbuilt, "Train graph is not built"
@@ -353,12 +364,21 @@ class Recommender(object):
         else:
             outputs = self.T.get_outputs(outputs_id)
         
-        results = self._tf_train_sess.run(operations+losses+outputs,
-                                 feed_dict=feed_dict)
-        
-        return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
+        if (self._summary_dir is None or self._tf_train_summary is None) \
+            or not write_summary:
+            results = self._tf_train_sess.run(operations+losses+outputs,
+                                     feed_dict=feed_dict)
+            return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
                       'outputs': results[-len(outputs):]}
-        
+        else:
+            assert self._summary_dir is not None, \
+                    "the directory for tensorflow summary is not specified."
+            results = self._tf_train_sess.run(operations+losses+outputs+[self._tf_train_summary],
+                                             feed_dict=feed_dict)
+            return_dict = {'losses': results[len(operations):len(operations)+len(losses)],
+                      'outputs': results[-len(outputs):-1]}
+            self._tf_summary_writer.add_summary(results[-1], step)
+            
         self._flag_updated = True
         return return_dict
     
@@ -367,7 +387,7 @@ class Recommender(object):
         assert self._train, "Train is disabled"
         assert self._flag_isbuilt, "Train graph is not built"
         
-        feed_dict = self._generate_feed_dict(batch_data, 
+        feed_dict = self._generate_feed_dict(batch_data,
                                             self.T.get_input_mapping(input_mapping_id))
         
         results = self._tf_train_sess.run(ports,
@@ -402,11 +422,12 @@ class Recommender(object):
             outputs = []
         else:
             outputs = self.S.get_outputs(outputs_id)
+        
         results = self._tf_serve_sess.run(operations+losses+outputs, 
-                            feed_dict=feed_dict)
-
+                                          feed_dict=feed_dict)
         return {'losses': results[len(operations):len(operations)+len(losses)], 
-                'outputs': results[-len(outputs):]}
+            'outputs': results[-len(outputs):]}
+        
     
     def serve_inspect_ports(self, batch_data, ports=[], input_mapping_id='default'):
         
@@ -433,9 +454,22 @@ class Recommender(object):
             save_model_dir = self._save_model_dir
         with self.traingraph.tf_graph.as_default():
             self._tf_train_saver.save(self._tf_train_sess, 
-                                         os.path.join(save_model_dir, 'model.ckpt'),
-                                        global_step=global_step)
+                                      os.path.join(save_model_dir, 'model.ckpt'),
+                                      global_step=global_step)
     
+    def add_scalar_summary(self, tag=None, value=None, step=None):
+        
+        assert tag is not None, "tag can not be None."
+        assert value is not None, "value can not be None."
+        assert step is not None, "step can not be None."
+        assert self._summary_dir is not None, \
+                    "the directory for tensorflow summary is not specified."
+        
+        summary = tf.Summary(value=[tf.Summary.Value(tag=tag,
+                                                     simple_value=value)])
+        self._tf_summary_writer.add_summary(summary, step)
+        
+        
     def restore(self, save_model_dir=None, restore_train=False, restore_serve=False):
         
         if save_model_dir is None:
@@ -482,7 +516,9 @@ class Recommender(object):
                 self._tf_train_sess = tf.Session(config=config)
                 self._tf_train_sess.run(tf.global_variables_initializer())
                 self._tf_train_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
-
+                if self._summary_dir is not None:
+                    self._tf_train_summary = tf.summary.merge_all()
+                    
         if self._serve:
             self.servegraph.build()
             with self.servegraph.tf_graph.as_default():
@@ -491,6 +527,9 @@ class Recommender(object):
                 self._tf_serve_sess = tf.Session(config=config)
                 self._tf_serve_sess.run(tf.global_variables_initializer())
                 self._tf_serve_saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+        
+        if self._summary_dir is not None:
+            self._tf_summary_writer = tf.summary.FileWriter(self._summary_dir)
         
         if self._init_model_dir is not None:
             self.restore(save_model_dir=self._init_model_dir,

@@ -1,5 +1,4 @@
 from openrec.utils.evaluators import Evaluator
-import bottleneck as bn
 import numpy as np
 
 class Recall(Evaluator):
@@ -17,8 +16,8 @@ class Recall(Evaluator):
             pred[excl_mask] = -np.inf
         recall = []
         
+        idx = np.argpartition(-pred, self._recall_at, axis=1)
         for k in self._recall_at:
-            idx = bn.argpartition(-pred, k, axis=1)
             pred_binary = np.zeros_like(pred, dtype=bool)
             pred_binary[np.arange(num_users)[:, np.newaxis], idx[:, :k]] = True
             
@@ -26,12 +25,3 @@ class Recall(Evaluator):
             recall.append((tmp / np.minimum(k, pos_mask.sum(axis=1))).reshape((num_users, -1)))
             
         return np.concatenate(recall, axis=1)
-
-#     def compute(self, rank_above, negative_num):
-
-#         del negative_num
-#         results = np.zeros(len(self._recall_at))
-#         for rank in rank_above:
-#             results += (rank <= self._recall_at).astype(np.float32)
-
-#         return results / len(rank_above)

@@ -1,7 +1,7 @@
 from openrec import ModelTrainer
 from openrec.utils import Dataset
 from openrec.recommenders import PMF
-from openrec.utils.evaluators import AUC, Recall
+from openrec.utils.evaluators import NDCG, AUC, Recall
 from openrec.utils.samplers import StratifiedPointwiseSampler
 from openrec.utils.samplers import EvaluationSampler
 import dataloader
@@ -29,21 +29,23 @@ model = PMF(batch_size=batch_size,
             dim_item_embed=dim_embed, 
             serve_mode='all', 
             save_model_dir='pmf_recommender/',
-            summary_dir='pmf_summary_decay/',
+            summary_dir='pmf_summary/',
             train=True, serve=True)
 
-# auc_evaluator = AUC()
-recall_evaluator = Recall(recall_at=[20, 50])
+ndcg_evaluator = NDCG(ndcg_at=[50, 100])
+recall_evaluator = Recall(recall_at=[50, 100])
+auc_evaluator = AUC()
 model_trainer = ModelTrainer(model=model)
 
 def train_iter_func(model, _input, step, write_summary):
     
-    lr = 0.001 / (10**(step // 30000))
-    _input['lr'] = lr
+    # lr = 0.001 / (10**(step // 30000))
+    # _input['lr'] = lr
     return np.sum(model.train(_input, step=step, 
                               write_summary=write_summary)['losses'])
     
 model_trainer.train(total_iter=total_iter, eval_iter=eval_iter, 
                     save_iter=save_iter, train_sampler=train_sampler, 
-                    eval_samplers=[val_sampler, test_sampler], evaluators=[recall_evaluator], 
+                    eval_samplers=[val_sampler, test_sampler], 
+                    evaluators=[ndcg_evaluator, auc_evaluator, recall_evaluator], 
                     train_iter_func=train_iter_func)

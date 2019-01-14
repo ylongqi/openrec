@@ -9,18 +9,23 @@ class NDCG(Evaluator):
         self._ndcg_at = np.array(ndcg_at)
 
         super(NDCG, self).__init__(etype='rank', name=name)
-
-    def compute(self, rank_above, negative_num):
-
-        del negative_num
-        denominator = 0.0
-        for i in range(len(rank_above)):
-            denominator += 1.0 / log(i+2, 2)
+    
+    def compute(self, pos_mask, pred, excl_mask=None):
         
-        results = np.zeros(len(self._ndcg_at))
-        for r in rank_above:
-            tmp = 1.0 / log(r+2, 2)
-            results[r < self._ndcg_at] += tmp
+        num_users = pred.shape[0]
+        if excl_mask is not None:
+            pred[excl_mask] = -np.inf
+        ndcg = []
         
-        return results / denominator
+        for user_i in range(num_users):
+            pos_pred = pred[user_i][pos_mask[user_i]]
+            rank_above = np.sum(pred[user_i] > pos_pred.reshape((-1, 1)), axis=1) 
+            
+            user_ndcg = []
+            for k in self._ndcg_at:
+                r = rank_above[rank_above < k]
+                user_ndcg.append(np.sum(1.0 / np.log2(r+2)))
+            ndcg.append(user_ndcg)
+            
+        return np.array(ndcg).reshape((num_users, -1))
 

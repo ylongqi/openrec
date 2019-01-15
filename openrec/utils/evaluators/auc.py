@@ -15,12 +15,11 @@ class AUC(Evaluator):
         
         for user_i in range(num_users):
             if excl_mask is not None:
-                eval_mask = np.logical_not(excl_mask[user_i])
-                eval_pred = pred[user_i][eval_mask]
-                eval_num = np.sum(eval_mask)
+                eval_mask = np.logical_not(np.logical_or(pos_mask[user_i], excl_mask[user_i]))
             else:
-                eval_pred = pred[user_i]
-                eval_num = pred.shape[1]
+                eval_mask = np.logical_not(pos_mask[user_i])
+            eval_pred = pred[user_i][eval_mask]
+            eval_num = np.sum(eval_mask)
             
             pos_pred = pred[user_i][pos_mask[user_i]]
             user_auc = np.sum(eval_pred <= pos_pred.reshape((-1, 1))) \

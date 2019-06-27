@@ -4,7 +4,7 @@ from openrec.utils.samplers import Sampler
 
 def RandomPairwiseSampler(dataset, batch_size, num_process=5, seed=100):
     
-    def batch(dataset, batch_size=batch_size, seed=seed):
+    def batch(dataset=dataset, batch_size=batch_size):
         
         while True:
             input_npy = np.zeros(batch_size, dtype=[('user_id', np.int32),
@@ -19,6 +19,6 @@ def RandomPairwiseSampler(dataset, batch_size, num_process=5, seed=100):
                 input_npy[ind] = (user_id, p_item_id, n_item_id)
             yield input_npy
     
-    s = Sampler(dataset=dataset, generate_batch=batch, num_process=num_process)
+    s = Sampler(generate_batch=batch, num_process=num_process, seed=seed)
     
     return s

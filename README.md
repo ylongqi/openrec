@@ -10,6 +10,19 @@
 
 [Longqi Yang](http://www.cs.cornell.edu/~ylongqi/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](http://www.cs.cornell.edu/~ylongqi/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
 
+**2019-07-12** OpenRec is being migrated to [Tensorflow 2.0](https://www.tensorflow.org/beta). Major changes to expect:
+
+- All OpenRec modules will be compatible [tf.keras.layers.Layer](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/layers/Layer), so that they can be used seamlessly with any Tensorflow 2.0 code base.
+- All OpenRec models will be compatible [tf.keras.Model](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/Model).
+- All input data pipelines will be compatible with [tf.data.Dataset](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/data/Dataset) but are made much more friendly for recommendation models.
+- Minimizing boilerplate while keeping the modularity and adaptability of OpenRec.
+
+To get things started, we introduce OpenRec (Tensorflow 2.0) implementations of [deep learning recommendation model (DLRM)](https://github.com/facebookresearch/dlrm). Check out `tf2_examples/dlrm_criteo.py`.
+
+To experiment with these new features, do `pip3 install .` inside the repo and then `import openrec.tf2`. You need to have Tensorflow 2.0 installed (Follow the instructions [here](https://www.tensorflow.org/beta)).
+
+More examples, tutorials and documents will be available soon. Check out `tf2_examples/`.
+
 **2018-08-31** Introducing new modular interfaces for OpenRec. Major changes:
 
 - A new paradigm for defining, extending, and building recommenders.

@@ -12,8 +12,8 @@
 
 **2019-07-12** OpenRec is being migrated to [Tensorflow 2.0](https://www.tensorflow.org/beta). Major changes to expect:
 
-- All OpenRec modules will be compatible [tf.keras.layers.Layer](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/layers/Layer), so that they can be used seamlessly with any Tensorflow 2.0 code base.
-- All OpenRec models will be compatible [tf.keras.Model](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/Model).
+- All OpenRec modules will be compatible with [tf.keras.layers.Layer](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/layers/Layer), so that they can be used seamlessly with any Tensorflow 2.0 code base.
+- All OpenRec models will be compatible with [tf.keras.Model](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/Model).
 - All input data pipelines will be compatible with [tf.data.Dataset](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/data/Dataset) but are made much more friendly for recommendation models.
 - Minimizing boilerplate while keeping the modularity and adaptability of OpenRec.
 

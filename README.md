@@ -8,7 +8,7 @@
 
 **For the structure and the design philosophy of OpenRec, please refer to the following paper published in WSDM'18:** 
 
-[Longqi Yang](http://www.cs.cornell.edu/~ylongqi/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](http://www.cs.cornell.edu/~ylongqi/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
+[Longqi Yang](https://ylongqi.com/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](https://ylongqi.com/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
 
 **2019-07-12** OpenRec is being migrated to [Tensorflow 2.0](https://www.tensorflow.org/beta). Major changes to expect:
 

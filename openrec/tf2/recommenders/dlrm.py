@@ -80,10 +80,8 @@ class DLRM(Model):
         sparse_features shape: [num_of_sparse_features, batch_size]
         '''
         
-        sparse_features = tf.transpose(sparse_features)
-        
         sparse_emb_vecs = list(map(lambda pair: pair[1](pair[0]), 
-                                      zip(tf.unstack(sparse_features), 
+                                      zip(tf.unstack(sparse_features, axis=1), 
                                           self._latent_factors)))
         
         dense_emb_vec = self._mlp_bot(dense_features)

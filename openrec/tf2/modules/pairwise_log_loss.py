@@ -29,6 +29,6 @@ class PairwiseLogLoss(Layer):
         if n_item_bias is not None:
             dot_user_neg += n_item_bias
             
-        loss = -tf.math.reduce_sum(tf.math.log_sigmoid(tf.math.maximum(dot_user_pos-dot_user_neg, -30.0)))
+        loss = -tf.math.reduce_mean(tf.math.log_sigmoid(tf.math.maximum(dot_user_pos-dot_user_neg, -30.0)))
         
         return loss

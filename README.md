@@ -71,7 +71,7 @@ python setup.py install
 
 ## Dataset download
 
-Use `download_dataset.sh` script.
+All datasets can be downloaded from Google drive [here](https://drive.google.com/drive/folders/1taJ91txiMAWBMUtezc_N5gaYuTEpvW_e?usp=sharing).
 
 ## Get started
 

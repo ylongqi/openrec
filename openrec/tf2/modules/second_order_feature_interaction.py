@@ -1,5 +1,4 @@
 from tensorflow.keras.layers import Layer
-from tensorflow.linalg import LinearOperatorLowerTriangular as LT
 import tensorflow as tf
 
 class SecondOrderFeatureInteraction(Layer):
@@ -19,7 +18,8 @@ class SecondOrderFeatureInteraction(Layer):
         batch_size = tf.shape(inputs[0])[0]
         
         concat_features = tf.stack(inputs, axis=1)
-        dot_products = LT(tf.matmul(concat_features, concat_features, transpose_b=True)).to_dense()
+        dot_products = tf.linalg.LinearOperatorLowerTriangular(tf.matmul(concat_features, concat_features, transpose_b=True)).to_dense()
+
         ones = tf.ones_like(dot_products)
         mask = tf.linalg.band_part(ones, 0, -1)
         

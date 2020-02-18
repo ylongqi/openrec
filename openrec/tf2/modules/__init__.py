@@ -1,4 +1,5 @@
 from openrec.tf2.modules.latent_factor import LatentFactor
 from openrec.tf2.modules.pairwise_log_loss import PairwiseLogLoss
+from openrec.tf2.modules.pointwise_mse_loss import PointwiseMSELoss
 from openrec.tf2.modules.multi_layer_perceptron import MLP
 from openrec.tf2.modules.second_order_feature_interaction import SecondOrderFeatureInteraction

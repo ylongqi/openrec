@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue
+import multiprocessing as mp
 import tensorflow as tf
 import numpy as np
 import random
@@ -155,39 +155,45 @@ class _DataStore(object):
     def total_items(self):
         
         return self._total_items
+    
+    def total_records(self):
 
+        return len(self._raw_data)
+
+
+def _process(q, generator, generator_params, output_shapes, batch_size):
+            
+    batch_data = {key:[] for key in output_shapes}
+    num_data_points = 0
+
+    for single_data in generator(*generator_params):
+        for key in single_data:
+            batch_data[key].append(single_data[key])
+        num_data_points += 1
+        if num_data_points == batch_size:
+            q.put(batch_data)
+            batch_data = {key:[] for key in output_shapes}
+            num_data_points = 0
+    
+    if num_data_points > 0:
+        q.put(batch_data)
+    q.put(None)
 
 class _ParallelDataset:
     
-    def __init__(self, generator, output_types, output_shapes, 
+    def __init__(self, generator, generator_params, output_types, output_shapes, 
                  num_parallel_calls, batch_size, take):
         
-        self._q = Queue(maxsize=num_parallel_calls)
+        ctx = mp.get_context('spawn')
+        self._q = ctx.Queue(maxsize=num_parallel_calls)
         self._output_types = output_types
         self._take = take
         self._count = 0
         
-        def _process(q, generator, output_shapes, batch_size):
-            
-            batch_data = {key:[] for key in output_shapes}
-            num_data_points = 0
-            
-            for single_data in generator():
-                for key in single_data:
-                    batch_data[key].append(single_data[key])
-                num_data_points += 1
-                if num_data_points == batch_size:
-                    q.put(batch_data)
-                    batch_data = {key:[] for key in output_shapes}
-                    num_data_points = 0
-            
-            if num_data_points > 0:
-                q.put(batch_data)
-        
         self._p_list = []
         
         for i in range(num_parallel_calls):
-            self._p_list.append(Process(target=_process, args=(self._q, generator, output_shapes, batch_size)))
+            self._p_list.append(ctx.Process(target=_process, args=(self._q, generator, generator_params, output_shapes, batch_size)))
             self._p_list[i].daemon = True
             self._p_list[i].start()
     
@@ -199,8 +205,11 @@ class _ParallelDataset:
         
         if self._take is None or self._count < self._take:
             batch_data = self._q.get()
-            self._count += 1
-            return {key:tf.constant(batch_data[key], dtype=self._output_types[key]) for key in batch_data}
+            if batch_data is None:
+                raise StopIteration()
+            else:
+                self._count += 1
+                return {key:tf.constant(batch_data[key], dtype=self._output_types[key]) for key in batch_data}
         else:
             raise StopIteration()
         

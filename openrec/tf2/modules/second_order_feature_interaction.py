@@ -12,20 +12,14 @@ class SecondOrderFeatureInteraction(Layer):
     def call(self, inputs):
         
         '''
-        inputs: list of features with shape [batch_size, num_features, feature_dim] or [batch_size, feature_dim]
+        inputs: list of features with shape [batch_size, feature_dim]
         '''
         
         batch_size = tf.shape(inputs[0])[0]
         
-        def _expand_tensor(tensor):
-            if tf.shape(tensor) == 3:
-                return tensor
-            else:
-                return tf.expand_dims(tensor, 1)
-            
-        expand_inputs = list(map(_expand_tensor, inputs))
-        concat_features = tf.concat(expand_inputs, axis=1)
+        concat_features = tf.stack(inputs, axis=1)
         dot_products = tf.linalg.LinearOperatorLowerTriangular(tf.matmul(concat_features, concat_features, transpose_b=True)).to_dense()
+
         ones = tf.ones_like(dot_products)
         mask = tf.linalg.band_part(ones, 0, -1)
         

@@ -10,6 +10,8 @@
 
 [Longqi Yang](https://ylongqi.com/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](https://ylongqi.com/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
 
+**2020-02-17** OpenRec now uses Tensorflow 2.0 by default. Supports for Tensorflow 1.x are deprecated (all prior APIs have been moved to `openrec.tf1`).
+
 **2019-07-12** OpenRec is being migrated to [Tensorflow 2.0](https://www.tensorflow.org/beta). Major changes to expect:
 
 - All OpenRec modules will be compatible with [tf.keras.layers.Layer](https://www.tensorflow.org/versions/r2.0/api_docs/python/tf/keras/layers/Layer), so that they can be used seamlessly with any Tensorflow 2.0 code base.

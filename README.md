@@ -2,15 +2,18 @@
   <a  href="http://www.openrec.ai/" target="_blank"><img src="https://github.com/ylongqi/openrec-web/blob/gh-pages/openrec.png?raw=true" width="60%"></a><br><br>
 </div>
 
-[![Docs](https://readthedocs.org/projects/openrec/badge/?version=latest)](http://openrec.readthedocs.io/en/latest/)
-
 [**OpenRec**](http://www.openrec.ai/) is an open-source and modular library for neural network-inspired recommendation algorithms. Each recommender is modeled as a computational graph that consists of a structured ensemble of reusable modules connected through a set of well-defined interfaces. OpenRec is built to ease the process of extending and adapting state-of-the-art neural recommenders to heterogeneous recommendation scenarios, where different users', items', and contextual data sources need to be incorporated.
 
 **For the structure and the design philosophy of OpenRec, please refer to the following paper published in WSDM'18:** 
 
 [Longqi Yang](https://ylongqi.com/), Eugene Bagdasaryan, Joshua Gruenstein, Cheng-Kang Hsieh, and [Deborah Estrin](http://destrin.smalldata.io/). 2018. [OpenRec: A Modular Framework for Extensible and Adaptable Recommendation Algorithms.](https://ylongqi.com/paper/YangBGHE18.pdf) In Proceedings of WSDM’18, February 5–9, 2018, Marina Del Rey, CA, USA.  <img src="https://github.com/christinatsan/openrec-demo/blob/gh-pages/ccimage.png?raw=true" width="50">
 
-**2020-02-17** OpenRec now uses Tensorflow 2.0 by default. Supports for Tensorflow 1.x are deprecated (all prior APIs have been moved to `openrec.tf1`).
+**2020-02-17** OpenRec now uses Tensorflow 2.0 by default. Supports for Tensorflow 1.x are deprecated (all prior APIs have been moved to `openrec.tf1`). Currently supported recommendation algorithms include:
+* BPR (`openrec.tf2.recommenders.BPR`): Bayesian Personalized Ranking (Rendle et al., 2009)
+* WRMF (`openrec.tf2.recommenders.WRMF`): Weighted Regularized Matrix Factorization (Hu et al., 2008)
+* UCML (`openrec.tf2.recommenders.UCML`): Collaborative Metric Learning with uniformly sampled triplets (Hsieh et al., 2017)
+* GMF (`openrec.tf2.recommenders.GMF`): Generalized Matrix Factorization, a.k.a., Neural Collaborative Filtering (He et al., 2017)
+* DLRM (`openrec.tf2.recommenders.DLRM`): Deep Learning Recommendation Model, developed by Facebook (Naumov et al., 2019)
 
 **2019-07-12** OpenRec is being migrated to [Tensorflow 2.0](https://www.tensorflow.org/beta). Major changes to expect:
 
